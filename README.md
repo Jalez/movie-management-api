@@ -13,7 +13,7 @@ A REST API for managing movies built with Spring Boot, PostgreSQL, and Gradle.
 - ✅ Test environment with H2 in-memory database
 
 **Currently Implementing:**
-- 🔄 Movie entity and repository layer (Issue 3)
++ None (CRUD API endpoints complete)
 
 ## 📋 Prerequisites
 
@@ -247,20 +247,61 @@ Application logs are available at:
 
 ## 📚 API Documentation
 
-### Current Endpoints
+### Available Endpoints
 
 **Health & Monitoring:**
 - `GET /actuator/health` - Application health status
 - `GET /actuator/info` - Application information
 - `GET /actuator/metrics` - Application metrics
 
-**Planned Endpoints (Coming in Issues 3-6):**
+**Movie Management API:**
 - `GET /movies` - Get all movies
-- `GET /movies/{id}` - Get movie by ID
-- `POST /movies` - Create new movie
-- `PUT /movies/{id}` - Update movie
-- `DELETE /movies/{id}` - Delete movie
-- `GET /movies/search` - Search movies with filters
+- `GET /movies/{id}` - Get movie by ID (404 if not found)
+- `POST /movies` - Create new movie (201 Created, 400 on validation error, 409 on duplicate)
+- `PUT /movies/{id}` - Update movie (200 OK, 404 if not found, 409 on duplicate)
+- `DELETE /movies/{id}` - Delete movie (204 No Content, 404 if not found)
+
+### Request/Response Format
+
+**Movie JSON:**
+```json
+{
+    "id": 1,
+    "title": "Inception",
+    "genre": "Sci-Fi",
+    "releaseYear": 2010,
+    "director": "Christopher Nolan",
+    "rating": 8.8
+}
+```
+
+**Error Response Example:**
+```json
+{
+    "status": 404,
+    "error": "Movie Not Found",
+    "message": "Movie with ID 123 not found",
+    "path": "/movies/123",
+    "timestamp": "2025-07-08T12:00:00"
+}
+```
+
+**Validation Error Example:**
+```json
+{
+    "status": 400,
+    "error": "Validation Failed",
+    "message": "Request validation failed",
+    "path": "/movies",
+    "timestamp": "2025-07-08T12:00:00",
+    "fieldErrors": [
+        { "field": "title", "rejectedValue": "", "message": "Title cannot be blank" },
+        { "field": "rating", "rejectedValue": 15.0, "message": "Rating cannot exceed 10.0" }
+    ]
+}
+```
+
+All error responses are now consistent and handled by a global exception handler.
 
 ## 🚧 Development Status
 
@@ -271,15 +312,21 @@ Application logs are available at:
 - [x] Basic application configuration
 - [x] Test environment setup
 
-### In Progress (Issue 3)
-- [ ] Movie JPA entity
-- [ ] Movie repository interface
-- [ ] Repository unit tests
 
-### Upcoming (Issues 4-14)
-- [ ] Service layer implementation
-- [ ] REST controller endpoints
-- [ ] Integration tests
+### Completed (Issues 3-4)
+- [x] Movie JPA entity
+- [x] Movie repository interface
+- [x] Repository unit tests
+- [x] Service layer implementation
+
+### Completed (Issue 5)
+- [x] REST controller endpoints (CRUD)
+- [x] Request/response validation
+- [x] Global error handling with consistent error responses
+- [x] Controller integration tests (Tests with H2 database)
+
+### Upcoming
+- [ ] Search endpoint (`GET /movies/search`)
 - [ ] Docker configuration
 - [ ] API documentation with Swagger
 
@@ -289,4 +336,4 @@ This is a learning project following a structured approach with GitHub issues. E
 
 ## 📄 License
 
-This project is for educational purposes.
+This project is for educational purposes. See the [LICENSE](LICENSE) file for details.
