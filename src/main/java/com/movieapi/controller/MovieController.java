@@ -1,6 +1,7 @@
 package com.movieapi.controller;
 
 import com.movieapi.entity.Movie;
+import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.service.MovieService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -10,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.Year;
 import java.util.List;
 import java.util.Optional;
 
@@ -116,5 +119,78 @@ public class MovieController {
         
         logger.info("DELETE /movies/{} - Successfully deleted movie", id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Search movies based on multiple criteria.
+     * All query parameters are optional and can be combined.
+     *
+     * @param genre       the genre to filter by (case-sensitive, exact match)
+     * @param releaseYear the release year to filter by (exact match)
+     * @param minRating   the minimum rating to filter by (inclusive)
+     * @param director    the director name to search for (case-insensitive partial match)
+     * @return ResponseEntity containing list of movies matching the criteria
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<Movie>> searchMovies(
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) Integer releaseYear,
+            @RequestParam(required = false) BigDecimal minRating,
+            @RequestParam(required = false) String director) {
+        
+        logger.debug("GET /movies/search - Searching with criteria: genre={}, releaseYear={}, minRating={}, director={}", 
+                    genre, releaseYear, minRating, director);
+        
+        // Validate query parameters
+        validateSearchParameters(genre, releaseYear, minRating, director);
+        
+        List<Movie> movies = movieService.searchMovies(genre, releaseYear, minRating, director);
+        
+        logger.info("GET /movies/search - Found {} movies matching criteria", movies.size());
+        return ResponseEntity.ok(movies);
+    }
+
+    /**
+     * Validates search parameters according to business rules.
+     *
+     * @param genre       the genre parameter
+     * @param releaseYear the release year parameter
+     * @param minRating   the minimum rating parameter
+     * @param director    the director parameter
+     * @throws InvalidMovieDataException if any parameter is invalid
+     */
+    private void validateSearchParameters(String genre, Integer releaseYear, BigDecimal minRating, String director) {
+        int currentYear = Year.now().getValue();
+        
+        // Validate genre
+        if (genre != null && genre.trim().isEmpty()) {
+            throw new InvalidMovieDataException("genre", genre, "Genre cannot be empty if provided");
+        }
+        
+        // Validate release year
+        if (releaseYear != null) {
+            if (releaseYear < 1900) {
+                throw new InvalidMovieDataException("releaseYear", releaseYear, "Release year must be 1900 or later");
+            }
+            if (releaseYear > currentYear + 5) {
+                throw new InvalidMovieDataException("releaseYear", releaseYear, 
+                        String.format("Release year cannot be more than 5 years in the future (current year: %d)", currentYear));
+            }
+        }
+        
+        // Validate minimum rating
+        if (minRating != null) {
+            if (minRating.compareTo(BigDecimal.ZERO) < 0) {
+                throw new InvalidMovieDataException("minRating", minRating, "Minimum rating cannot be negative");
+            }
+            if (minRating.compareTo(new BigDecimal("10.0")) > 0) {
+                throw new InvalidMovieDataException("minRating", minRating, "Minimum rating cannot exceed 10.0");
+            }
+        }
+        
+        // Validate director
+        if (director != null && director.trim().isEmpty()) {
+            throw new InvalidMovieDataException("director", director, "Director cannot be empty if provided");
+        }
     }
 }
