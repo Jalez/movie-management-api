@@ -6,6 +6,7 @@ import com.movieapi.exception.DuplicateMovieException;
 import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.exception.MovieNotFoundException;
 import com.movieapi.service.MovieService;
+import com.movieapi.validation.MovieSearchValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +38,9 @@ class MovieControllerTest {
 
     @MockBean
     private MovieService movieService;
+
+    @MockBean
+    private MovieSearchValidator movieSearchValidator;
 
     @Autowired
     private ObjectMapper objectMapper;

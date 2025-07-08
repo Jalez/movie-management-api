@@ -2,6 +2,7 @@ package com.movieapi.controller;
 
 import com.movieapi.entity.Movie;
 import com.movieapi.service.MovieService;
+import com.movieapi.validation.MovieSearchValidator;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,10 +28,12 @@ public class MovieController {
     private static final Logger logger = LoggerFactory.getLogger(MovieController.class);
 
     private final MovieService movieService;
+    private final MovieSearchValidator movieSearchValidator;
 
     @Autowired
-    public MovieController(MovieService movieService) {
+    public MovieController(MovieService movieService, MovieSearchValidator movieSearchValidator) {
         this.movieService = movieService;
+        this.movieSearchValidator = movieSearchValidator;
     }
 
     /**
@@ -116,5 +120,34 @@ public class MovieController {
         
         logger.info("DELETE /movies/{} - Successfully deleted movie", id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Search movies based on multiple criteria.
+     * All query parameters are optional and can be combined.
+     *
+     * @param genre       the genre to filter by (case-sensitive, exact match)
+     * @param releaseYear the release year to filter by (exact match)
+     * @param minRating   the minimum rating to filter by (inclusive)
+     * @param director    the director name to search for (case-insensitive partial match)
+     * @return ResponseEntity containing list of movies matching the criteria
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<Movie>> searchMovies(
+            @RequestParam(required = false) String genre,
+            @RequestParam(required = false) Integer releaseYear,
+            @RequestParam(required = false) BigDecimal minRating,
+            @RequestParam(required = false) String director) {
+        
+        logger.debug("GET /movies/search - Searching with criteria: genre={}, releaseYear={}, minRating={}, director={}", 
+                    genre, releaseYear, minRating, director);
+        
+        // Validate query parameters
+        movieSearchValidator.validateSearchParameters(genre, releaseYear, minRating, director);
+        
+        List<Movie> movies = movieService.searchMovies(genre, releaseYear, minRating, director);
+        
+        logger.info("GET /movies/search - Found {} movies matching criteria", movies.size());
+        return ResponseEntity.ok(movies);
     }
 }

@@ -463,4 +463,27 @@ class MovieControllerIntegrationTest {
                 .andExpect(jsonPath("$.path").exists())
                 .andExpect(jsonPath("$.timestamp").exists());
     }
+
+    private Movie createTestMovie(String title, String director, String genre, Integer year, String rating) {
+        Movie movie = new Movie();
+        movie.setTitle(title);
+        movie.setDirector(director);
+        movie.setGenre(genre);
+        movie.setReleaseYear(year);
+        movie.setRating(new BigDecimal(rating));
+        return movie;
+    }
+
+    private Long createMovieAndGetId(Movie movie) throws Exception {
+        String response = mockMvc.perform(post("/movies")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(movie)))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Movie createdMovie = objectMapper.readValue(response, Movie.class);
+        return createdMovie.getId();
+    }
 }
