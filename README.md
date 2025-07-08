@@ -261,6 +261,73 @@ Application logs are available at:
 - `PUT /movies/{id}` - Update movie (200 OK, 404 if not found, 409 on duplicate)
 - `DELETE /movies/{id}` - Delete movie (204 No Content, 404 if not found)
 
+- `GET /movies/search` - Search for movies by criteria (see below)
+
+
+### Movie Search Endpoint
+
+**Endpoint:** `GET /movies/search`
+
+**Description:**
+Search for movies using one or more optional query parameters. All parameters are optional and can be combined. Returns a list of movies matching all provided criteria.
+
+**Query Parameters:**
+
+| Parameter    | Type     | Description                                                      |
+|--------------|----------|------------------------------------------------------------------|
+| genre        | String   | Filter by genre (case-sensitive, exact match)                    |
+| releaseYear  | Integer  | Filter by release year (e.g., 2010)                              |
+| minRating    | Decimal  | Filter by minimum rating (inclusive, e.g., 8.5)                  |
+| director     | String   | Filter by director (case-insensitive, partial match allowed)     |
+
+**Examples:**
+
+*Get all Sci-Fi movies released in 2010 with rating at least 8.0:*
+```http
+GET /movies/search?genre=Sci-Fi&releaseYear=2010&minRating=8.0
+```
+
+*Get all movies directed by someone with "nolan" in their name:*
+```http
+GET /movies/search?director=nolan
+```
+
+*Get all movies with rating 9.0 or higher:*
+```http
+GET /movies/search?minRating=9.0
+```
+
+*Get all movies (no filters):*
+```http
+GET /movies/search
+```
+
+**Validation & Error Handling:**
+
+- All parameters are optional, but if provided, must be valid:
+    - `genre` and `director` cannot be empty strings if present.
+    - `releaseYear` must be 1900 or later and not more than 5 years in the future.
+    - `minRating` must be between 0.0 and 10.0.
+- Invalid parameters return a 400 Bad Request with a descriptive error message.
+
+**Sample Error Response:**
+```json
+{
+    "status": 400,
+    "error": "Invalid Movie Data",
+    "message": "Release year must be 1900 or later",
+    "fieldErrors": [
+        { "field": "releaseYear", "rejectedValue": 1800, "message": "Release year must be 1900 or later" }
+    ]
+}
+```
+
+**Notes:**
+- If no movies match the criteria, an empty array is returned with 200 OK.
+- If no parameters are provided, all movies are returned.
+
+---
+
 ### Request/Response Format
 
 **Movie JSON:**
@@ -325,8 +392,14 @@ All error responses are now consistent and handled by a global exception handler
 - [x] Global error handling with consistent error responses
 - [x] Controller integration tests (Tests with H2 database)
 
+### Completed (Issue 6)
+- [x] Search endpoint (`GET /movies/search`)
+- [x] Search parameter validation 
+- [x] Multi-criteria filtering (genre, director, release year, rating)
+- [x] Case-insensitive search for text fields
+- [x] Comprehensive search integration tests
+
 ### Upcoming
-- [ ] Search endpoint (`GET /movies/search`)
 - [ ] Docker configuration
 - [ ] API documentation with Swagger
 
