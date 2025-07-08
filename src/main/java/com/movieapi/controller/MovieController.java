@@ -1,8 +1,8 @@
 package com.movieapi.controller;
 
 import com.movieapi.entity.Movie;
-import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.service.MovieService;
+import com.movieapi.validation.MovieSearchValidator;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.time.Year;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,10 +28,12 @@ public class MovieController {
     private static final Logger logger = LoggerFactory.getLogger(MovieController.class);
 
     private final MovieService movieService;
+    private final MovieSearchValidator movieSearchValidator;
 
     @Autowired
-    public MovieController(MovieService movieService) {
+    public MovieController(MovieService movieService, MovieSearchValidator movieSearchValidator) {
         this.movieService = movieService;
+        this.movieSearchValidator = movieSearchValidator;
     }
 
     /**
@@ -142,55 +143,11 @@ public class MovieController {
                     genre, releaseYear, minRating, director);
         
         // Validate query parameters
-        validateSearchParameters(genre, releaseYear, minRating, director);
+        movieSearchValidator.validateSearchParameters(genre, releaseYear, minRating, director);
         
         List<Movie> movies = movieService.searchMovies(genre, releaseYear, minRating, director);
         
         logger.info("GET /movies/search - Found {} movies matching criteria", movies.size());
         return ResponseEntity.ok(movies);
-    }
-
-    /**
-     * Validates search parameters according to business rules.
-     *
-     * @param genre       the genre parameter
-     * @param releaseYear the release year parameter
-     * @param minRating   the minimum rating parameter
-     * @param director    the director parameter
-     * @throws InvalidMovieDataException if any parameter is invalid
-     */
-    private void validateSearchParameters(String genre, Integer releaseYear, BigDecimal minRating, String director) {
-        int currentYear = Year.now().getValue();
-        
-        // Validate genre
-        if (genre != null && genre.trim().isEmpty()) {
-            throw new InvalidMovieDataException("genre", genre, "Genre cannot be empty if provided");
-        }
-        
-        // Validate release year
-        if (releaseYear != null) {
-            if (releaseYear < 1900) {
-                throw new InvalidMovieDataException("releaseYear", releaseYear, "Release year must be 1900 or later");
-            }
-            if (releaseYear > currentYear + 5) {
-                throw new InvalidMovieDataException("releaseYear", releaseYear, 
-                        String.format("Release year cannot be more than 5 years in the future (current year: %d)", currentYear));
-            }
-        }
-        
-        // Validate minimum rating
-        if (minRating != null) {
-            if (minRating.compareTo(BigDecimal.ZERO) < 0) {
-                throw new InvalidMovieDataException("minRating", minRating, "Minimum rating cannot be negative");
-            }
-            if (minRating.compareTo(new BigDecimal("10.0")) > 0) {
-                throw new InvalidMovieDataException("minRating", minRating, "Minimum rating cannot exceed 10.0");
-            }
-        }
-        
-        // Validate director
-        if (director != null && director.trim().isEmpty()) {
-            throw new InvalidMovieDataException("director", director, "Director cannot be empty if provided");
-        }
     }
 }
