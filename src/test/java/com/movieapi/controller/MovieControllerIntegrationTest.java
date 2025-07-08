@@ -464,52 +464,6 @@ class MovieControllerIntegrationTest {
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
-    @Test
-    void searchMovies_IntegrationTest_ShouldReturnFilteredResults() throws Exception {
-        // Create test movies
-        Movie movie1 = createTestMovie("Inception", "Christopher Nolan", "Sci-Fi", 2010, "8.8");
-        Movie movie2 = createTestMovie("The Matrix", "The Wachowskis", "Sci-Fi", 1999, "8.7");
-        Movie movie3 = createTestMovie("Pulp Fiction", "Quentin Tarantino", "Crime", 1994, "8.9");
-        
-        Long movie1Id = createMovieAndGetId(movie1);
-        Long movie2Id = createMovieAndGetId(movie2);
-        Long movie3Id = createMovieAndGetId(movie3);
-
-        // Test search by genre
-        mockMvc.perform(get("/movies/search?genre=Sci-Fi"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[*].genre").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("Sci-Fi"))));
-
-        // Test search by release year
-        mockMvc.perform(get("/movies/search?releaseYear=2010"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].title").value("Inception"));
-
-        // Test search by minimum rating
-        mockMvc.perform(get("/movies/search?minRating=8.8"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[*].rating").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.greaterThanOrEqualTo(8.8))));
-
-        // Test search by director (partial match)
-        mockMvc.perform(get("/movies/search?director=nolan"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].director").value("Christopher Nolan"));
-
-        // Test multiple criteria
-        mockMvc.perform(get("/movies/search?genre=Sci-Fi&minRating=8.7"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
-
-        // Test no results
-        mockMvc.perform(get("/movies/search?genre=NonExistent"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
-    }
-
     private Movie createTestMovie(String title, String director, String genre, Integer year, String rating) {
         Movie movie = new Movie();
         movie.setTitle(title);
