@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -141,6 +143,48 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Handle JSON parsing errors (malformed JSON).
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+            HttpMessageNotReadableException ex, WebRequest request) {
+        
+        logger.warn("Malformed JSON request: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Malformed JSON",
+                "Invalid JSON format in request body",
+                request.getDescription(false).replace("uri=", ""),
+                LocalDateTime.now()
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    /**
+     * Handle unsupported media type errors (e.g., missing Content-Type).
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupportedException(
+            HttpMediaTypeNotSupportedException ex, WebRequest request) {
+        
+        logger.warn("Unsupported media type: {}", ex.getMessage());
+        
+        String message = "Content type '" + ex.getContentType() + "' is not supported. Please use 'application/json'.";
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
+                "Unsupported Media Type",
+                message,
+                request.getDescription(false).replace("uri=", ""),
+                LocalDateTime.now()
+        );
+        
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(errorResponse);
     }
 
     /**

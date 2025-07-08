@@ -56,15 +56,13 @@ public class MovieController {
     @GetMapping("/{id}")
     public ResponseEntity<Movie> getMovieById(@PathVariable Long id) {
         logger.debug("GET /movies/{} - Retrieving movie by ID", id);
-        
         Optional<Movie> movie = movieService.getMovieById(id);
-        
         if (movie.isPresent()) {
             logger.info("GET /movies/{} - Movie found: {}", id, movie.get().getTitle());
             return ResponseEntity.ok(movie.get());
         } else {
             logger.info("GET /movies/{} - Movie not found", id);
-            return ResponseEntity.notFound().build();
+            throw new com.movieapi.exception.MovieNotFoundException("Movie with ID " + id + " not found");
         }
     }
 
