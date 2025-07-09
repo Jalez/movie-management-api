@@ -3,6 +3,7 @@ package com.movieapi.controller;
 import com.movieapi.exception.DuplicateMovieException;
 import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.exception.MovieNotFoundException;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -210,11 +211,21 @@ public class GlobalExceptionHandler {
     /**
      * Standard error response structure.
      */
+    @Schema(description = "Standard error response")
     public static class ErrorResponse {
+        @Schema(description = "HTTP status code", example = "404")
         private int status;
+        
+        @Schema(description = "Error category", example = "Movie Not Found")
         private String error;
+        
+        @Schema(description = "Detailed error message", example = "Movie with ID 1 not found")
         private String message;
+        
+        @Schema(description = "Request path that caused the error", example = "/movies/1")
         private String path;
+        
+        @Schema(description = "Timestamp when the error occurred", example = "2024-01-15T10:30:00")
         private LocalDateTime timestamp;
 
         public ErrorResponse() {}
@@ -247,7 +258,9 @@ public class GlobalExceptionHandler {
     /**
      * Validation error response structure with field-specific errors.
      */
+    @Schema(description = "Validation error response with field-specific details")
     public static class ValidationErrorResponse extends ErrorResponse {
+        @Schema(description = "List of field validation errors")
         private List<FieldValidationError> fieldErrors;
 
         public ValidationErrorResponse() {
@@ -268,9 +281,15 @@ public class GlobalExceptionHandler {
     /**
      * Individual field validation error.
      */
+    @Schema(description = "Individual field validation error details")
     public static class FieldValidationError {
+        @Schema(description = "Name of the field that failed validation", example = "title")
         private String field;
+        
+        @Schema(description = "The rejected value", example = "")
         private Object rejectedValue;
+        
+        @Schema(description = "Validation error message", example = "Title cannot be blank")
         private String message;
 
         public FieldValidationError() {}
