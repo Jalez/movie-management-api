@@ -1,5 +1,6 @@
 package com.movieapi.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
@@ -12,31 +13,37 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "movies")
+@Schema(description = "Movie entity representing a movie in the system")
 public class Movie {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(description = "Unique identifier of the movie", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
 
     @NotBlank(message = "Title cannot be blank")
     @Size(max = 255, message = "Title cannot exceed 255 characters")
     @Column(name = "title", nullable = false)
+    @Schema(description = "Title of the movie", example = "Inception", required = true, maxLength = 255)
     private String title;
 
     @NotBlank(message = "Director cannot be blank")
     @Size(max = 255, message = "Director cannot exceed 255 characters")
     @Column(name = "director", nullable = false)
+    @Schema(description = "Director of the movie", example = "Christopher Nolan", required = true, maxLength = 255)
     private String director;
 
     @NotBlank(message = "Genre cannot be blank")
     @Size(max = 100, message = "Genre cannot exceed 100 characters")
     @Column(name = "genre", nullable = false)
+    @Schema(description = "Genre of the movie", example = "Sci-Fi", required = true, maxLength = 100)
     private String genre;
 
     @NotNull(message = "Release year cannot be null")
     @Min(value = 1888, message = "Release year must be 1888 or later") // First motion picture
     @Max(value = 2100, message = "Release year cannot be in the far future")
     @Column(name = "release_year", nullable = false)
+    @Schema(description = "Year the movie was released", example = "2010", required = true, minimum = "1888", maximum = "2100")
     private Integer releaseYear;
 
     @NotNull(message = "Rating cannot be null")
@@ -44,6 +51,7 @@ public class Movie {
     @DecimalMax(value = "10.0", message = "Rating cannot exceed 10.0")
     @Digits(integer = 2, fraction = 1, message = "Rating must have at most 2 integer digits and 1 decimal place")
     @Column(name = "rating", nullable = false, precision = 3, scale = 1)
+    @Schema(description = "Rating of the movie (0.0 to 10.0)", example = "8.8", required = true, minimum = "0.0", maximum = "10.0")
     private BigDecimal rating;
 
     // Default constructor (required by JPA)

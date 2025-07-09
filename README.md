@@ -247,7 +247,237 @@ Application logs are available at:
 
 ## 📚 API Documentation
 
+### Swagger/OpenAPI Documentation
+
+This API includes interactive Swagger UI documentation for easy testing and exploration:
+
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
+- **OpenAPI YAML**: http://localhost:8080/v3/api-docs.yaml
+
+The Swagger UI provides:
+- Interactive API explorer with "Try it out" functionality
+- Complete request/response schemas
+- Sample data and examples
+- Error response documentation
+- Authentication support (if implemented)
+
+### Quick Start with Swagger UI
+
+1. Start the application: `./gradlew bootRun`
+2. Open http://localhost:8080/swagger-ui.html
+3. Explore all endpoints with interactive documentation
+4. Test endpoints directly from the browser
+5. View request/response examples and schemas
+
 ### Available Endpoints
+
+**Health & Monitoring:**
+- `GET /actuator/health` - Application health status
+- `GET /actuator/info` - Application information
+- `GET /actuator/metrics` - Application metrics
+
+**Movie Management API:**
+- `GET /movies` - Get all movies
+- `GET /movies/{id}` - Get movie by ID (404 if not found)
+- `POST /movies` - Create new movie (201 Created, 400 on validation error, 409 on duplicate)
+- `PUT /movies/{id}` - Update movie (200 OK, 404 if not found, 409 on duplicate)
+- `DELETE /movies/{id}` - Delete movie (204 No Content, 404 if not found)
+- `GET /movies/search` - Search for movies by criteria (see below)
+
+### Sample Test Data
+
+The application comes pre-loaded with diverse sample data for testing:
+
+#### Classic Movies (1940s-1970s)
+- Citizen Kane (1941) - Drama, Orson Welles, 8.3
+- Casablanca (1942) - Romance, Michael Curtiz, 8.5
+- Seven Samurai (1954) - Action, Akira Kurosawa, 8.6
+- 2001: A Space Odyssey (1968) - Sci-Fi, Stanley Kubrick, 8.3
+- The Godfather (1972) - Crime, Francis Ford Coppola, 9.2
+
+#### Modern Blockbusters (1990s-2020s)
+- Pulp Fiction (1994) - Crime, Quentin Tarantino, 8.9
+- The Matrix (1999) - Sci-Fi, Lana Wachowski, Lilly Wachowski, 8.7
+- The Dark Knight (2008) - Action, Christopher Nolan, 9.0
+- Inception (2010) - Sci-Fi, Christopher Nolan, 8.8
+- Parasite (2019) - Thriller, Bong Joon-ho, 8.6
+
+#### Animated Films
+- The Lion King (1994) - Animation, Roger Allers, Rob Minkoff, 8.5
+- Finding Nemo (2003) - Animation, Andrew Stanton, 8.2
+- Spider-Man: Into the Spider-Verse (2018) - Animation, Bob Persichetti, 8.4
+
+#### Genre Variety
+- **Sci-Fi**: Inception, Interstellar, The Matrix, 2001: A Space Odyssey
+- **Action**: The Dark Knight, The Avengers, Seven Samurai
+- **Crime**: Pulp Fiction, The Godfather, Goodfellas
+- **Horror**: The Shining
+- **Comedy**: Barbie, Everything Everywhere All at Once
+- **Romance**: Casablanca, Titanic
+- **Animation**: Finding Nemo, The Lion King
+
+### Manual Testing Guide
+
+#### Testing CRUD Operations
+
+**1. Get All Movies**
+```bash
+curl -X GET "http://localhost:8080/movies" \
+  -H "accept: application/json"
+```
+
+**2. Get Specific Movie**
+```bash
+curl -X GET "http://localhost:8080/movies/1" \
+  -H "accept: application/json"
+```
+
+**3. Create New Movie**
+```bash
+curl -X POST "http://localhost:8080/movies" \
+  -H "accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Blade Runner 2049",
+    "director": "Denis Villeneuve",
+    "genre": "Sci-Fi",
+    "releaseYear": 2017,
+    "rating": 8.0
+  }'
+```
+
+**4. Update Movie**
+```bash
+curl -X PUT "http://localhost:8080/movies/1" \
+  -H "accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Inception",
+    "director": "Christopher Nolan",
+    "genre": "Sci-Fi",
+    "releaseYear": 2010,
+    "rating": 9.0
+  }'
+```
+
+**5. Delete Movie**
+```bash
+curl -X DELETE "http://localhost:8080/movies/1" \
+  -H "accept: application/json"
+```
+
+#### Testing Search Operations
+
+**Search by Genre**
+```bash
+curl -X GET "http://localhost:8080/movies/search?genre=Sci-Fi" \
+  -H "accept: application/json"
+```
+
+**Search by Director**
+```bash
+curl -X GET "http://localhost:8080/movies/search?director=Christopher%20Nolan" \
+  -H "accept: application/json"
+```
+
+**Search by Minimum Rating**
+```bash
+curl -X GET "http://localhost:8080/movies/search?minRating=9.0" \
+  -H "accept: application/json"
+```
+
+**Combined Search**
+```bash
+curl -X GET "http://localhost:8080/movies/search?genre=Sci-Fi&minRating=8.5&releaseYear=2010" \
+  -H "accept: application/json"
+```
+
+#### Testing Error Scenarios
+
+**1. Invalid Movie ID (404)**
+```bash
+curl -X GET "http://localhost:8080/movies/999" \
+  -H "accept: application/json"
+```
+
+**2. Invalid Data Types (400)**
+```bash
+curl -X GET "http://localhost:8080/movies/invalid" \
+  -H "accept: application/json"
+```
+
+**3. Validation Errors (400)**
+```bash
+curl -X POST "http://localhost:8080/movies" \
+  -H "accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "",
+    "director": "Test Director",
+    "genre": "Drama",
+    "releaseYear": 1800,
+    "rating": 15.0
+  }'
+```
+
+**4. Malformed JSON (400)**
+```bash
+curl -X POST "http://localhost:8080/movies" \
+  -H "accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test", "invalid json'
+```
+
+**5. Missing Content-Type (415)**
+```bash
+curl -X POST "http://localhost:8080/movies" \
+  -H "accept: application/json" \
+  -d '{"title": "Test Movie"}'
+```
+
+### HTTP Status Codes
+
+| Code | Description | When |
+|------|-------------|------|
+| 200 | OK | Successful GET, PUT operations |
+| 201 | Created | Successful POST operation |
+| 204 | No Content | Successful DELETE operation |
+| 400 | Bad Request | Validation errors, invalid data types |
+| 404 | Not Found | Movie with specified ID doesn't exist |
+| 409 | Conflict | Duplicate movie (title + director combination) |
+| 415 | Unsupported Media Type | Missing or wrong Content-Type header |
+| 500 | Internal Server Error | Unexpected server errors |
+
+### Validation Rules
+
+**Movie Fields:**
+- **title**: Required, max 255 characters, cannot be blank
+- **director**: Required, max 255 characters, cannot be blank  
+- **genre**: Required, max 100 characters, cannot be blank
+- **releaseYear**: Required, must be 1888 or later, cannot be more than year 2100
+- **rating**: Required, decimal between 0.0 and 10.0, max 1 decimal place
+
+**Search Parameters:**
+- **genre**: Optional, cannot be empty if provided
+- **releaseYear**: Optional, must be 1900 or later if provided
+- **minRating**: Optional, must be 0.0-10.0 if provided
+- **director**: Optional, cannot be empty if provided
+
+### Performance Testing
+
+Test with larger datasets and concurrent requests:
+
+```bash
+# Test with multiple concurrent requests
+for i in {1..10}; do
+  curl -X GET "http://localhost:8080/movies" &
+done
+wait
+
+# Test search performance
+time curl -X GET "http://localhost:8080/movies/search?minRating=8.0"
+```
 
 **Health & Monitoring:**
 - `GET /actuator/health` - Application health status
@@ -370,7 +600,62 @@ GET /movies/search
 
 All error responses are now consistent and handled by a global exception handler.
 
-## 🚧 Development Status
+### Testing Completion Summary
+
+✅ **Issue #8 Complete** - API Testing Documentation and Manual Testing
+
+**Completed Features:**
+- ✅ Interactive Swagger/OpenAPI documentation at http://localhost:8080/swagger-ui.html
+- ✅ Comprehensive sample movie dataset (39 movies) with diverse test data
+- ✅ Complete API endpoint documentation with request/response examples
+- ✅ Manual testing guide with curl commands
+- ✅ Error response documentation and validation
+- ✅ HTTP status code verification (200, 201, 204, 400, 404, 409, 415, 500)
+- ✅ JSON schema validation and examples
+
+**Sample Data Coverage:**
+- 🎬 **39 movies** across **multiple decades** (1941-2025)
+- 🎭 **10+ genres**: Sci-Fi, Action, Crime, Romance, Horror, Animation, Drama, Comedy, etc.
+- ⭐ **Rating range**: 0.0 to 10.0 (full spectrum for testing)
+- 🎯 **Edge cases**: Long titles, special characters, boundary values
+- �‍🎬 **Famous directors**: Christopher Nolan, Quentin Tarantino, Martin Scorsese, etc.
+
+**Testing Capabilities:**
+- **Interactive Testing**: Use Swagger UI for point-and-click API testing
+- **Automated Testing**: Export OpenAPI spec for Postman collections
+- **Manual Testing**: Complete curl command examples provided
+- **Error Testing**: Validation errors, not found, conflicts, malformed data
+- **Performance Testing**: Concurrent request examples
+
+**API Documentation Features:**
+- 📋 **Complete endpoint documentation** with OpenAPI 3.x annotations
+- 🔄 **Request/response schemas** with validation rules
+- 🚨 **Error response formats** with field-level validation details
+- 📊 **HTTP status codes** properly documented
+- 🧪 **Try-it-out functionality** in Swagger UI
+- 📖 **Comprehensive examples** for all endpoints
+
+**Quick Test Commands:**
+```bash
+# Get all movies
+curl http://localhost:8080/movies
+
+# Search Sci-Fi movies with rating ≥ 8.5
+curl "http://localhost:8080/movies/search?genre=Sci-Fi&minRating=8.5"
+
+# Test error handling
+curl http://localhost:8080/movies/999
+
+# View API documentation
+open http://localhost:8080/swagger-ui.html
+```
+
+**Next Steps:**
+- Use Swagger UI for comprehensive manual testing
+- Export OpenAPI spec as Postman collection alternative
+- All CRUD and search operations ready for production use
+
+---
 
 ### Completed (Issues 1-2)
 - [x] Spring Boot project initialization
@@ -378,7 +663,6 @@ All error responses are now consistent and handled by a global exception handler
 - [x] Flyway migrations
 - [x] Basic application configuration
 - [x] Test environment setup
-
 
 ### Completed (Issues 3-4)
 - [x] Movie JPA entity
@@ -399,9 +683,26 @@ All error responses are now consistent and handled by a global exception handler
 - [x] Case-insensitive search for text fields
 - [x] Comprehensive search integration tests
 
+### Completed (Issue 7)
+- [x] Integration test suite
+- [x] End-to-end API testing with real HTTP requests
+- [x] Test database isolation and cleanup
+- [x] Comprehensive test coverage
+
+### Completed (Issue 8)
+- [x] Swagger/OpenAPI documentation setup
+- [x] Interactive API documentation with Swagger UI
+- [x] Comprehensive sample movie dataset
+- [x] Manual testing guide and documentation
+- [x] Complete API testing documentation
+- [x] HTTP status code verification
+- [x] Error response format documentation
+
 ### Upcoming
 - [ ] Docker configuration
-- [ ] API documentation with Swagger
+- [ ] Production deployment setup
+- [ ] Performance optimizations
+- [ ] Additional API features (pagination, sorting)
 
 ## 🤝 Contributing
 
