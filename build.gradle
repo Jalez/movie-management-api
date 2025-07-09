@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.3'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 }
 
 // Build info for actuator
@@ -11,11 +12,15 @@ springBoot {
 
 // Enable resource filtering for application.properties
 processResources {
+	def projectName = project.name
+	def projectVersion = project.version.toString()
+	def projectDescription = project.description ?: 'A REST API for managing movies built with Spring Boot'
+	
 	filesMatching('application.properties') {
 		filter { line ->
-			line.replace('${project.name}', project.name)
-				.replace('${project.version}', project.version.toString())
-				.replace('${project.description}', project.description ?: 'A REST API for managing movies built with Spring Boot')
+			line.replace('${project.name}', projectName)
+				.replace('${project.version}', projectVersion)
+				.replace('${project.description}', projectDescription)
 		}
 	}
 }
@@ -50,13 +55,20 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 	
+	// Configure JVM arguments for Mockito inline mock maker
+	jvmArgs = [
+		'-XX:+EnableDynamicAgentLoading',
+		'-Djdk.instrument.traceUsage=false',
+		'-javaagent:' + configurations.testRuntimeClasspath.find { it.name.contains('byte-buddy-agent') }
+	]
+	
 	// Configure test output
 	testLogging {
 		events "passed", "skipped", "failed", "standardOut", "standardError"
-		showExceptions true
-		showCauses true
-		showStackTraces true
-		exceptionFormat "full"
+		showExceptions = true
+		showCauses = true
+		showStackTraces = true
+		exceptionFormat = "full"
 		
 		// Show individual test results
 		afterSuite { desc, result ->
@@ -65,6 +77,59 @@ tasks.named('test') {
 				def startItem = '|  ', endItem = '  |'
 				def repeatLength = startItem.length() + output.length() + endItem.length()
 				println('\n' + ('-' * repeatLength) + '\n' + startItem + output + endItem + '\n' + ('-' * repeatLength))
+			}
+		}
+	}
+	
+	// Generate JaCoCo test report
+	finalizedBy jacocoTestReport
+}
+
+// JaCoCo configuration
+jacoco {
+	toolVersion = "0.8.13"
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		html.required = true
+		csv.required = false
+	}
+	
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: [
+				'**/MovieManagementApiApplication.class',
+				'**/entity/**',
+				'**/dto/**',
+				'**/config/**'
+			])
+		}))
+	}
+}
+
+jacocoTestCoverageVerification {
+	dependsOn jacocoTestReport
+	violationRules {
+		rule {
+			limit {
+				minimum = 0.80 // 80% minimum coverage
+			}
+		}
+		rule {
+			element = 'CLASS'
+			excludes = [
+				'com.movieapi.MovieManagementApiApplication',
+				'com.movieapi.entity.*',
+				'com.movieapi.dto.*',
+				'com.movieapi.config.*'
+			]
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.75 // 75% minimum coverage per class
 			}
 		}
 	}
