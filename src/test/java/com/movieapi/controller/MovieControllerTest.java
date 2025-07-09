@@ -6,13 +6,14 @@ import com.movieapi.exception.DuplicateMovieException;
 import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.exception.MovieNotFoundException;
 import com.movieapi.service.MovieService;
+import com.movieapi.testutil.MovieTestDataBuilder;
 import com.movieapi.validation.MovieSearchValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static com.movieapi.testutil.MovieTestDataBuilder.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.mockito.Mockito.*;
@@ -36,10 +38,10 @@ class MovieControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private MovieService movieService;
 
-    @MockBean
+    @MockitoBean
     private MovieSearchValidator movieSearchValidator;
 
     @Autowired
@@ -50,21 +52,13 @@ class MovieControllerTest {
 
     @BeforeEach
     void setUp() {
-        testMovie = new Movie();
-        testMovie.setId(1L);
-        testMovie.setTitle("Inception");
-        testMovie.setDirector("Christopher Nolan");
-        testMovie.setGenre("Sci-Fi");
-        testMovie.setReleaseYear(2010);
-        testMovie.setRating(new BigDecimal("8.8"));
+        testMovie = inception()
+                .withId(1L)
+                .build();
 
-        testMovie2 = new Movie();
-        testMovie2.setId(2L);
-        testMovie2.setTitle("The Matrix");
-        testMovie2.setDirector("The Wachowskis");
-        testMovie2.setGenre("Sci-Fi");
-        testMovie2.setReleaseYear(1999);
-        testMovie2.setRating(new BigDecimal("8.7"));
+        testMovie2 = theMatrix()
+                .withId(2L)
+                .build();
     }
 
     @Test
@@ -148,20 +142,22 @@ class MovieControllerTest {
     @Test
     void createMovie_WithValidData_ShouldReturn201() throws Exception {
         // Arrange
-        Movie newMovie = new Movie();
-        newMovie.setTitle("Interstellar");
-        newMovie.setDirector("Christopher Nolan");
-        newMovie.setGenre("Sci-Fi");
-        newMovie.setReleaseYear(2014);
-        newMovie.setRating(new BigDecimal("8.6"));
+        Movie newMovie = aMovie()
+                .withTitle("Interstellar")
+                .withDirector("Christopher Nolan")
+                .withGenre("Sci-Fi")
+                .withReleaseYear(2014)
+                .withRating(8.6)
+                .build();
 
-        Movie savedMovie = new Movie();
-        savedMovie.setId(3L);
-        savedMovie.setTitle("Interstellar");
-        savedMovie.setDirector("Christopher Nolan");
-        savedMovie.setGenre("Sci-Fi");
-        savedMovie.setReleaseYear(2014);
-        savedMovie.setRating(new BigDecimal("8.6"));
+        Movie savedMovie = aMovie()
+                .withId(3L)
+                .withTitle("Interstellar")
+                .withDirector("Christopher Nolan")
+                .withGenre("Sci-Fi")
+                .withReleaseYear(2014)
+                .withRating(8.6)
+                .build();
 
         when(movieService.createMovie(any(Movie.class))).thenReturn(savedMovie);
 
@@ -220,13 +216,11 @@ class MovieControllerTest {
     @Test
     void updateMovie_WithValidData_ShouldReturn200() throws Exception {
         // Arrange
-        Movie updatedMovie = new Movie();
-        updatedMovie.setId(1L);
-        updatedMovie.setTitle("Inception Updated");
-        updatedMovie.setDirector("Christopher Nolan");
-        updatedMovie.setGenre("Sci-Fi");
-        updatedMovie.setReleaseYear(2010);
-        updatedMovie.setRating(new BigDecimal("9.0"));
+        Movie updatedMovie = inception()
+                .withId(1L)
+                .withTitle("Inception Updated")
+                .withRating(9.0)
+                .build();
 
         when(movieService.updateMovie(eq(1L), any(Movie.class))).thenReturn(updatedMovie);
 

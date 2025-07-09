@@ -5,6 +5,7 @@ import com.movieapi.exception.DuplicateMovieException;
 import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.exception.MovieNotFoundException;
 import com.movieapi.repository.MovieRepository;
+import com.movieapi.testutil.MovieTestDataBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static com.movieapi.testutil.MovieTestDataBuilder.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
@@ -41,11 +43,13 @@ class MovieServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        validMovie = new Movie("Inception", "Christopher Nolan", "Sci-Fi", 2010, new BigDecimal("8.8"));
-        validMovie.setId(1L);
+        validMovie = inception()
+                .withId(1L)
+                .build();
 
-        anotherMovie = new Movie("The Dark Knight", "Christopher Nolan", "Action", 2008, new BigDecimal("9.0"));
-        anotherMovie.setId(2L);
+        anotherMovie = theDarkKnight()
+                .withId(2L)
+                .build();
     }
 
     @Test
@@ -103,9 +107,22 @@ class MovieServiceImplTest {
     @Test
     void createMovie_WhenValidMovie_ShouldCreateSuccessfully() {
         // Given
-        Movie movieToCreate = new Movie("New Movie", "New Director", "Drama", 2023, new BigDecimal("7.5"));
-        Movie savedMovie = new Movie("New Movie", "New Director", "Drama", 2023, new BigDecimal("7.5"));
-        savedMovie.setId(3L);
+        Movie movieToCreate = aMovie()
+                .withTitle("New Movie")
+                .withDirector("New Director")
+                .withGenre("Drama")
+                .withReleaseYear(2023)
+                .withRating(7.5)
+                .build();
+        
+        Movie savedMovie = aMovie()
+                .withId(3L)
+                .withTitle("New Movie")
+                .withDirector("New Director")
+                .withGenre("Drama")
+                .withReleaseYear(2023)
+                .withRating(7.5)
+                .build();
 
         when(movieRepository.existsByTitleAndDirector("New Movie", "New Director")).thenReturn(false);
         when(movieRepository.save(movieToCreate)).thenReturn(savedMovie);
@@ -147,7 +164,7 @@ class MovieServiceImplTest {
     @Test
     void createMovie_WhenTitleIsEmpty_ShouldThrowInvalidMovieDataException() {
         // Given
-        Movie invalidMovie = new Movie("", "Director", "Genre", 2023, new BigDecimal("7.0"));
+        Movie invalidMovie = movieWithBlankTitle().build();
 
         // When & Then
         assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
@@ -160,7 +177,7 @@ class MovieServiceImplTest {
     @Test
     void createMovie_WhenReleaseYearTooOld_ShouldThrowInvalidMovieDataException() {
         // Given
-        Movie invalidMovie = new Movie("Old Movie", "Director", "Genre", 1800, new BigDecimal("7.0"));
+        Movie invalidMovie = movieWithInvalidReleaseYear().build();
 
         // When & Then
         assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
@@ -173,8 +190,7 @@ class MovieServiceImplTest {
     @Test
     void createMovie_WhenReleaseYearTooFuture_ShouldThrowInvalidMovieDataException() {
         // Given
-        int futureYear = Year.now().getValue() + 10;
-        Movie invalidMovie = new Movie("Future Movie", "Director", "Genre", futureYear, new BigDecimal("7.0"));
+        Movie invalidMovie = movieWithFutureReleaseYear().build();
 
         // When & Then
         assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
@@ -187,7 +203,7 @@ class MovieServiceImplTest {
     @Test
     void createMovie_WhenRatingTooHigh_ShouldThrowInvalidMovieDataException() {
         // Given
-        Movie invalidMovie = new Movie("Movie", "Director", "Genre", 2023, new BigDecimal("11.0"));
+        Movie invalidMovie = movieWithInvalidRating().build();
 
         // When & Then
         assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
@@ -200,8 +216,11 @@ class MovieServiceImplTest {
     @Test
     void updateMovie_WhenValidUpdate_ShouldUpdateSuccessfully() {
         // Given
-        Movie updatedMovie = new Movie("Updated Title", "Christopher Nolan", "Sci-Fi", 2010, new BigDecimal("9.0"));
-        updatedMovie.setId(1L);
+        Movie updatedMovie = inception()
+                .withId(1L)
+                .withTitle("Updated Title")
+                .withRating(9.0)
+                .build();
 
         when(movieRepository.findById(1L)).thenReturn(Optional.of(validMovie));
         when(movieRepository.existsByTitleAndDirector("Updated Title", "Christopher Nolan")).thenReturn(false);
