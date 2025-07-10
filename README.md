@@ -15,17 +15,85 @@ A REST API for managing movies built with Spring Boot, PostgreSQL, and Gradle.
 **Currently Implementing:**
 + None (CRUD API endpoints complete)
 
-## 📋 Prerequisites
+## 🐳 Quick Start with Docker (Recommended)
 
-Before running this application, ensure you have the following installed:
+The easiest way to run this application is using Docker Compose:
+
+### Prerequisites for Docker
+- **Docker** (20.10+)
+- **Docker Compose** (v2.0+)
+
+### Getting Started
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/Jalez/movie-management-api.git
+cd movie-management-api
+```
+
+2. **Set up environment variables:**
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit the .env file with your secure values
+nano .env  # or use your preferred editor
+```
+
+3. **Start the application:**
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in background
+docker-compose up -d --build
+```
+
+4. **Access the application:**
+- **API Base URL:** http://localhost:8080
+- **Swagger Documentation:** http://localhost:8080/swagger-ui.html
+- **Health Check:** http://localhost:8080/actuator/health
+
+5. **Stop the application:**
+```bash
+docker-compose down
+```
+
+### Environment Configuration
+
+**Required variables in `.env`:**
+```ini
+# Database credentials (required)
+DB_PASSWORD=your-secure-password
+POSTGRES_PASSWORD=your-secure-password
+
+# Application security (required)
+ADMIN_PASSWORD=your-secure-admin-password
+```
+
+**Optional variables:**
+```ini
+# JVM tuning (optional)
+JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
+
+# Application settings (optional)
+SPRING_PROFILES_ACTIVE=prod
+SERVER_PORT=8080
+```
+
+**Note:** The `.env` file is git-ignored for security. Never commit sensitive credentials to version control.
+
+## 📋 Manual Setup (Alternative)
+
+If you prefer to run the application locally without Docker:
+
+### Prerequisites for Manual Setup
 
 - **Java 17 or higher** (tested with Java 24)
 - **PostgreSQL 17.5** (installed via Homebrew)
 - **Gradle** (wrapper included, or install via Homebrew)
 
-## 🛠️ Installation & Setup
-
-### 1. Install Dependencies
+### 1. Install Dependencies for Manual Setup
 
 ```bash
 # Install Java (if not already installed)
@@ -38,7 +106,7 @@ brew install postgresql@17
 brew install gradle
 ```
 
-### 2. Database Setup
+### 2. Database Setup for Manual Installation
 
 ```bash
 # Start PostgreSQL service
@@ -54,7 +122,7 @@ psql moviedb -c "GRANT ALL PRIVILEGES ON DATABASE moviedb TO movieuser;"
 psql moviedb -c "GRANT ALL ON SCHEMA public TO movieuser;"
 ```
 
-### 3. Environment Variables
+### 3. Environment Variables for Manual Setup
 
 Set up your environment:
 
@@ -76,7 +144,11 @@ source ~/.zshrc
 
 ## 🏃‍♂️ Running the Application
 
-### Using Gradle Wrapper (Recommended)
+### Using Docker (Recommended)
+
+See the [Quick Start with Docker](#-quick-start-with-docker-recommended) section above.
+
+### Using Gradle Wrapper (Manual Setup)
 
 ```bash
 # Build the application
@@ -120,14 +192,35 @@ gradle bootRun
 
 Once the application is running, you can access:
 
-- **Application:** http://localhost:8080  - the main entry point (not implemented yet)
+- **Application:** http://localhost:8080  - the main entry point
 - **Health Check:** http://localhost:8080/actuator/health - the health status of the application (returns `{"status":"UP"}`)
 - **Application Info:** http://localhost:8080/actuator/info - information about the application (e.g., version, build time)
 - **Metrics:** http://localhost:8080/actuator/metrics - Application metrics (e.g., memory usage, request counts)
+- **Swagger API Documentation:** http://localhost:8080/swagger-ui.html - Interactive API documentation
 
 ### Health Check Response
 ```json
 {"status":"UP"}
+```
+
+### Docker Container Monitoring
+
+When running with Docker, you can also monitor containers:
+
+```bash
+# View running containers
+docker-compose ps
+
+# View logs
+docker-compose logs -f app    # Application logs
+docker-compose logs -f db     # Database logs
+
+# View all logs
+docker-compose logs -f
+
+# Execute commands in containers
+docker-compose exec db psql -U movieuser -d moviedb
+docker-compose exec app sh    # Shell into app container
 ```
 
 ## 🗄️ Database
@@ -204,7 +297,63 @@ spring.jpa.hibernate.ddl-auto=create-drop
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+### Docker Issues
+
+**1. Container Build Failed**
+```bash
+# Clean up containers and rebuild
+docker-compose down -v
+docker system prune -f
+docker-compose up --build
+
+# Check Docker disk space
+docker system df
+```
+
+**2. Database Connection Issues in Docker**
+```bash
+# Check if all services are running
+docker-compose ps
+
+# Check database logs
+docker-compose logs db
+
+# Restart database service
+docker-compose restart db
+```
+
+**3. Port Already in Use (Docker)**
+```bash
+# Check what's using the port
+lsof -i :8080
+
+# Stop conflicting containers
+docker stop $(docker ps -q --filter "publish=8080")
+
+# Or use different port in docker-compose.yml
+```
+
+**4. Environment Variables Not Loading**
+```bash
+# Verify .env file exists and has correct format
+cat .env
+
+# Restart with explicit env file
+docker-compose --env-file .env up --build
+```
+
+**5. Container Memory Issues**
+```bash
+# Check container resource usage
+docker stats
+
+# Add memory limits to docker-compose.yml:
+# services:
+#   app:
+#     mem_limit: 1g
+```
+
+### Common Issues (Manual Setup)
 
 **1. Database Connection Failed**
 ```bash
@@ -698,71 +847,7 @@ open http://localhost:8080/swagger-ui.html
 - [x] HTTP status code verification
 - [x] Error response format documentation
 
-## 🐳 Docker Setup
-
-### Prerequisites
-- Docker
-- Docker Compose
-
-### Running with Docker Compose
-
-1. **Build and start all services:**
-```bash
-docker-compose up --build
-```
-
-2. **Start in detached mode (background):**
-```bash
-docker-compose up -d
-```
-
-3. **View logs:**
-```bash
-docker-compose logs -f
-```
-
-4. **Stop all services:**
-```bash
-docker-compose down
-```
-
-5. **Stop and remove volumes:**
-```bash
-docker-compose down -v
-```
-
-### Environment Variables Setup
-
-1. **Create your environment file:**
-```bash
-# Copy the example environment file
-cp .env.example .env
-
-# Edit the .env file with your secure values
-nano .env  # or use your preferred editor
-```
-
-2. **Required Variables in .env:**
-```ini
-# Database credentials (required)
-DB_PASSWORD=your-secure-password
-POSTGRES_PASSWORD=your-secure-password
-
-# Application security (required)
-ADMIN_PASSWORD=your-secure-admin-password
-```
-
-3. **Optional Variables in .env:**
-```ini
-# JVM tuning (optional)
-JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
-
-# Application settings (optional)
-SPRING_PROFILES_ACTIVE=prod
-SERVER_PORT=8080
-```
-
-**Note:** The `.env` file is git-ignored for security. Never commit sensitive credentials to version control.
+## 🚀 Advanced Docker Configuration
 
 ### Available Environment Variables
 
@@ -790,7 +875,7 @@ The following environment variables can be configured:
 - `ADMIN_PASSWORD` - Admin user password
 - `SPRING_SECURITY_USER_NAME` - Admin username (defaults to 'admin')
 
-### Docker Development Tips
+### Development Tips with Docker
 
 1. **Environment Setup:**
 ```bash
@@ -822,21 +907,7 @@ docker-compose down
 docker-compose --env-file .env up -d
 ```
 
-4. **Monitoring and Debugging:**
-```bash
-# View running containers
-docker-compose ps
-
-# Container logs
-docker-compose logs -f app    # Application logs
-docker-compose logs -f db     # Database logs
-
-# Execute commands in containers
-docker-compose exec db psql -U movieuser -d moviedb
-docker-compose exec app sh    # Shell into app container
-```
-
-5. **Clean up:**
+4. **Clean up:**
 ```bash
 # Stop and remove containers
 docker-compose down
@@ -858,7 +929,8 @@ For production deployment:
 5. Use production-grade PostgreSQL configuration
 6. Enable automatic health checks and recovery
 
-### Upcoming
+## 🔮 Upcoming Features
+
 - [ ] Production deployment setup
 - [ ] Performance optimizations
 - [ ] Additional API features (pagination, sorting)
