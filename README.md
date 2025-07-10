@@ -698,8 +698,167 @@ open http://localhost:8080/swagger-ui.html
 - [x] HTTP status code verification
 - [x] Error response format documentation
 
+## 🐳 Docker Setup
+
+### Prerequisites
+- Docker
+- Docker Compose
+
+### Running with Docker Compose
+
+1. **Build and start all services:**
+```bash
+docker-compose up --build
+```
+
+2. **Start in detached mode (background):**
+```bash
+docker-compose up -d
+```
+
+3. **View logs:**
+```bash
+docker-compose logs -f
+```
+
+4. **Stop all services:**
+```bash
+docker-compose down
+```
+
+5. **Stop and remove volumes:**
+```bash
+docker-compose down -v
+```
+
+### Environment Variables Setup
+
+1. **Create your environment file:**
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit the .env file with your secure values
+nano .env  # or use your preferred editor
+```
+
+2. **Required Variables in .env:**
+```ini
+# Database credentials (required)
+DB_PASSWORD=your-secure-password
+POSTGRES_PASSWORD=your-secure-password
+
+# Application security (required)
+ADMIN_PASSWORD=your-secure-admin-password
+```
+
+3. **Optional Variables in .env:**
+```ini
+# JVM tuning (optional)
+JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
+
+# Application settings (optional)
+SPRING_PROFILES_ACTIVE=prod
+SERVER_PORT=8080
+```
+
+**Note:** The `.env` file is git-ignored for security. Never commit sensitive credentials to version control.
+
+### Available Environment Variables
+
+The following environment variables can be configured:
+
+**Application:**
+- `SPRING_DATASOURCE_URL` - Database connection URL
+- `SPRING_DATASOURCE_USERNAME` - Database username
+- `SPRING_DATASOURCE_PASSWORD` - Database password (use DB_PASSWORD in .env)
+- `SPRING_JPA_HIBERNATE_DDL_AUTO` - Hibernate DDL mode
+- `SPRING_JPA_SHOW_SQL` - SQL logging
+- `SPRING_FLYWAY_ENABLED` - Flyway migration status
+- `SPRING_FLYWAY_BASELINE_ON_MIGRATE` - Flyway baseline behavior
+- `JAVA_OPTS` - JVM configuration options
+- `SPRING_PROFILES_ACTIVE` - Active Spring profile
+- `SERVER_TOMCAT_MAX_THREADS` - Maximum worker threads
+- `SERVER_TOMCAT_MIN_SPARE_THREADS` - Minimum spare threads
+
+**Database:**
+- `POSTGRES_DB` - Database name
+- `POSTGRES_USER` - Database user
+- `POSTGRES_PASSWORD` - Database password (use POSTGRES_PASSWORD in .env)
+
+**Security:**
+- `ADMIN_PASSWORD` - Admin user password
+- `SPRING_SECURITY_USER_NAME` - Admin username (defaults to 'admin')
+
+### Docker Development Tips
+
+1. **Environment Setup:**
+```bash
+# Development setup
+cp .env.example .env
+nano .env  # Set your development variables
+
+# Production setup
+cp .env.example .env.prod
+nano .env.prod  # Set your production variables
+```
+
+2. **Running Different Environments:**
+```bash
+# Development (uses docker-compose.yml)
+docker-compose --env-file .env up --build
+
+# Production (uses docker-compose.prod.yml)
+docker-compose -f docker-compose.prod.yml --env-file .env.prod up --build
+```
+
+3. **Rebuild and Restart Services:**
+```bash
+# Rebuild a single service
+docker-compose up --build app
+
+# Restart with updated environment
+docker-compose down
+docker-compose --env-file .env up -d
+```
+
+4. **Monitoring and Debugging:**
+```bash
+# View running containers
+docker-compose ps
+
+# Container logs
+docker-compose logs -f app    # Application logs
+docker-compose logs -f db     # Database logs
+
+# Execute commands in containers
+docker-compose exec db psql -U movieuser -d moviedb
+docker-compose exec app sh    # Shell into app container
+```
+
+5. **Clean up:**
+```bash
+# Stop and remove containers
+docker-compose down
+
+# Remove containers and volumes (careful in production!)
+docker-compose down -v
+
+# Clean up unused resources
+docker system prune
+```
+
+### Production Deployment Notes
+
+For production deployment:
+1. Use appropriate environment variables
+2. Consider using Docker secrets for sensitive data
+3. Configure proper memory limits
+4. Set up monitoring and logging
+5. Use production-grade PostgreSQL configuration
+6. Enable automatic health checks and recovery
+
 ### Upcoming
-- [ ] Docker configuration
 - [ ] Production deployment setup
 - [ ] Performance optimizations
 - [ ] Additional API features (pagination, sorting)

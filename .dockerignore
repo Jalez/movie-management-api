@@ -1,0 +1,42 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Build artifacts
+build/
+bin/
+out/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test reports
+test-results/
+reports/
+
+# Gradle files
+.gradle/
+!gradle-wrapper.properties
+!gradle-wrapper.jar
