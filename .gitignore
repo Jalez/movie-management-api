@@ -64,3 +64,8 @@ out/
 
 # Application specific
 app.log
+
+# Environment variables
+.env
+.env.*
+!.env.example
