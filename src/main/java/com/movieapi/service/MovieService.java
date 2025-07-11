@@ -1,6 +1,8 @@
 package com.movieapi.service;
 
 import com.movieapi.entity.Movie;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -70,6 +72,23 @@ public interface MovieService {
      * @return list of movies matching the criteria
      */
     List<Movie> searchMovies(String genre, Integer year, BigDecimal minRating, String director);
+
+    /**
+     * Advanced search for movies with pagination and sorting.
+     *
+     * @param genre       the genre to filter by (case-sensitive, exact match, optional)
+     * @param releaseYear the release year to filter by (exact match, optional)
+     * @param minRating   the minimum rating to filter by (inclusive, optional)
+     * @param maxRating   the maximum rating to filter by (inclusive, optional)
+     * @param yearMin     the minimum release year to filter by (inclusive, optional)
+     * @param yearMax     the maximum release year to filter by (inclusive, optional)
+     * @param title       the title to search for (case-insensitive, partial match, optional)
+     * @param director    the director name to search for (case-insensitive partial match, optional)
+     * @param pageable    pagination and sorting information
+     * @return page of movies matching the criteria
+     */
+    Page<Movie> searchMoviesAdvanced(String genre, Integer releaseYear, BigDecimal minRating, BigDecimal maxRating,
+                                   Integer yearMin, Integer yearMax, String title, String director, Pageable pageable);
 
     /**
      * Get movies by genre (case-insensitive).
