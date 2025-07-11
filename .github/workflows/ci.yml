@@ -87,6 +87,7 @@ jobs:
       run: ./gradlew spotbugsMain spotbugsTest --no-daemon
     - name: Run dependency check
       run: ./gradlew dependencyCheckAnalyze --no-daemon
+      continue-on-error: true
 
   docker-build:
     name: Docker Build

@@ -198,6 +198,32 @@ Once the application is running, you can access:
 - **Metrics:** http://localhost:8080/actuator/metrics - Application metrics (e.g., memory usage, request counts)
 - **Swagger API Documentation:** http://localhost:8080/swagger-ui.html - Interactive API documentation
 
+## 🚀 CI/CD Pipeline
+
+This project includes a comprehensive CI/CD pipeline with the following features:
+
+### Quality Checks
+- **Tests:** Unit and integration tests with JUnit 5
+- **Code Coverage:** JaCoCo with 80% minimum coverage requirement
+- **Code Quality:** Checkstyle for code style enforcement
+- **Security:** SpotBugs for static analysis
+- **Dependency Security:** OWASP Dependency Check for vulnerability scanning
+
+### Pipeline Stages
+1. **Build & Test:** Compiles code and runs all tests
+2. **Quality Checks:** Runs code quality and security tools
+3. **Docker Build:** Creates and tests Docker image
+4. **Security Scan:** Runs Trivy vulnerability scanner
+5. **Notification:** Reports pipeline status
+
+### OWASP Dependency Check Note
+The OWASP Dependency Check may fail with a 403 error when accessing the NVD (National Vulnerability Database) API. This is a known issue that can be resolved by:
+
+1. **Getting a free NVD API key** from https://nvd.nist.gov/developers/request-an-api-key
+2. **The dependency check is configured to continue on error** in the CI pipeline, so it won't block builds
+
+For production use, it's recommended to obtain an NVD API key and configure it in your CI environment variables.
+
 ### Health Check Response
 ```json
 {"status":"UP"}

@@ -69,3 +69,7 @@ app.log
 .env
 .env.*
 !.env.example
+
+# OWASP Dependency Check data directories
+.dependency-check-data/
+.dependency-check-cache/
