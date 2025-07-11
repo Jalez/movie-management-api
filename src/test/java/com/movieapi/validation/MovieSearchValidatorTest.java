@@ -147,4 +147,149 @@ class MovieSearchValidatorTest {
         assertDoesNotThrow(() -> validator.validateSearchParameters(null, null, new BigDecimal("9.9"), null));
         assertDoesNotThrow(() -> validator.validateSearchParameters(null, null, new BigDecimal("5.0"), null));
     }
+
+    // --- Advanced Search Parameter Tests ---
+
+    @Test
+    void validateAdvancedSearchParameters_WithValidParameters_ShouldNotThrowException() {
+        assertDoesNotThrow(() -> validator.validateAdvancedSearchParameters(
+                "Action", 2020, new BigDecimal("8.5"), new BigDecimal("9.5"), 2000, 2025, "Inception", "Nolan", 0, 20, "title,asc"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithEmptyTitle_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, "   ", null, 0, 20, null));
+        assertEquals("title", exception.getField());
+        assertTrue(exception.getMessage().contains("Title cannot be empty"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithNegativeMaxRating_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, new BigDecimal("-1.0"), null, null, null, null, 0, 20, null));
+        assertEquals("maxRating", exception.getField());
+        assertTrue(exception.getMessage().contains("Maximum rating cannot be negative"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithExcessiveMaxRating_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, new BigDecimal("15.0"), null, null, null, null, 0, 20, null));
+        assertEquals("maxRating", exception.getField());
+        assertTrue(exception.getMessage().contains("Maximum rating cannot exceed 10.0"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithMinRatingGreaterThanMaxRating_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, new BigDecimal("9.0"), new BigDecimal("5.0"), null, null, null, null, 0, 20, null));
+        assertEquals("minRating", exception.getField());
+        assertTrue(exception.getMessage().contains("Minimum rating cannot be greater than maximum rating"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithYearMinTooLow_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, 1800, null, null, null, 0, 20, null));
+        assertEquals("yearMin", exception.getField());
+        assertTrue(exception.getMessage().contains("Minimum year must be 1900 or later"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithYearMinTooHigh_ShouldThrowException() {
+        int future = Year.now().getValue() + 10;
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, future, null, null, null, 0, 20, null));
+        assertEquals("yearMin", exception.getField());
+        assertTrue(exception.getMessage().contains("Minimum year cannot be more than 5 years in the future"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithYearMaxTooLow_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, null, 1800, null, null, 0, 20, null));
+        assertEquals("yearMax", exception.getField());
+        assertTrue(exception.getMessage().contains("Maximum year must be 1900 or later"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithYearMaxTooHigh_ShouldThrowException() {
+        int future = Year.now().getValue() + 10;
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, null, future, null, null, 0, 20, null));
+        assertEquals("yearMax", exception.getField());
+        assertTrue(exception.getMessage().contains("Maximum year cannot be more than 5 years in the future"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithYearMinGreaterThanYearMax_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, 2025, 2020, null, null, 0, 20, null));
+        assertEquals("yearMin", exception.getField());
+        assertTrue(exception.getMessage().contains("Minimum year cannot be greater than maximum year"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithNegativePage_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, null, null, -1, 20, null));
+        assertEquals("page", exception.getField());
+        assertTrue(exception.getMessage().contains("Page number cannot be negative"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithSizeLessThanOne_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, null, null, 0, 0, null));
+        assertEquals("size", exception.getField());
+        assertTrue(exception.getMessage().contains("Page size must be at least 1"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithSizeGreaterThan100_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, null, null, 0, 101, null));
+        assertEquals("size", exception.getField());
+        assertTrue(exception.getMessage().contains("Page size cannot exceed 100"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithSortTooManyParts_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, null, null, 0, 20, "title,asc,extra"));
+        assertEquals("sort", exception.getField());
+        assertTrue(exception.getMessage().contains("Sort parameter must be in format"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithInvalidSortField_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, null, null, 0, 20, "invalidField,asc"));
+        assertEquals("sort", exception.getField());
+        assertTrue(exception.getMessage().contains("Invalid sort field"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithInvalidSortDirection_ShouldThrowException() {
+        InvalidMovieDataException exception = assertThrows(InvalidMovieDataException.class,
+                () -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, null, null, 0, 20, "title,upwards"));
+        assertEquals("sort", exception.getField());
+        assertTrue(exception.getMessage().contains("Invalid sort direction"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithValidSortAsc_ShouldNotThrowException() {
+        assertDoesNotThrow(() -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, null, null, 0, 20, "title,asc"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithValidSortDesc_ShouldNotThrowException() {
+        assertDoesNotThrow(() -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, null, null, 0, 20, "title,desc"));
+    }
+
+    @Test
+    void validateAdvancedSearchParameters_WithValidSortFieldOnly_ShouldNotThrowException() {
+        assertDoesNotThrow(() -> validator.validateAdvancedSearchParameters(null, null, null, null, null, null, null, null, 0, 20, "title"));
+    }
 }

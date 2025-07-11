@@ -17,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Unit tests for MovieController.
@@ -289,5 +291,305 @@ class MovieControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Invalid Parameter"));
+    }
+
+    // --- Additional tests for GlobalExceptionHandler inner classes coverage ---
+
+    @Test
+    void validationErrorResponse_DefaultConstructor_ShouldCreateEmptyResponse() {
+        // When
+        GlobalExceptionHandler.ValidationErrorResponse response = new GlobalExceptionHandler.ValidationErrorResponse();
+
+        // Then
+        assertThat(response.getFieldErrors()).isEmpty();
+    }
+
+    @Test
+    void validationErrorResponse_ParameterizedConstructor_ShouldCreateResponseWithFieldErrors() {
+        // Given
+        List<GlobalExceptionHandler.FieldValidationError> fieldErrors = Arrays.asList(
+            new GlobalExceptionHandler.FieldValidationError("title", "", "Title cannot be blank"),
+            new GlobalExceptionHandler.FieldValidationError("rating", 15.0, "Rating cannot exceed 10.0")
+        );
+
+        // When
+        GlobalExceptionHandler.ValidationErrorResponse response = new GlobalExceptionHandler.ValidationErrorResponse(
+            400, "Validation Failed", "Request validation failed", "/movies", LocalDateTime.now(), fieldErrors
+        );
+
+        // Then
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(response.getError()).isEqualTo("Validation Failed");
+        assertThat(response.getMessage()).isEqualTo("Request validation failed");
+        assertThat(response.getPath()).isEqualTo("/movies");
+        assertThat(response.getFieldErrors()).hasSize(2);
+        assertThat(response.getFieldErrors().get(0).getField()).isEqualTo("title");
+        assertThat(response.getFieldErrors().get(1).getField()).isEqualTo("rating");
+    }
+
+    @Test
+    void validationErrorResponse_SetFieldErrors_ShouldUpdateFieldErrors() {
+        // Given
+        GlobalExceptionHandler.ValidationErrorResponse response = new GlobalExceptionHandler.ValidationErrorResponse();
+        List<GlobalExceptionHandler.FieldValidationError> fieldErrors = Arrays.asList(
+            new GlobalExceptionHandler.FieldValidationError("title", "", "Title cannot be blank")
+        );
+
+        // When
+        response.setFieldErrors(fieldErrors);
+
+        // Then
+        assertThat(response.getFieldErrors()).hasSize(1);
+        assertThat(response.getFieldErrors().get(0).getField()).isEqualTo("title");
+    }
+
+    @Test
+    void fieldValidationError_DefaultConstructor_ShouldCreateEmptyError() {
+        // When
+        GlobalExceptionHandler.FieldValidationError error = new GlobalExceptionHandler.FieldValidationError();
+
+        // Then
+        assertThat(error.getField()).isNull();
+        assertThat(error.getRejectedValue()).isNull();
+        assertThat(error.getMessage()).isNull();
+    }
+
+    @Test
+    void fieldValidationError_ParameterizedConstructor_ShouldCreateErrorWithDetails() {
+        // When
+        GlobalExceptionHandler.FieldValidationError error = new GlobalExceptionHandler.FieldValidationError(
+            "title", "", "Title cannot be blank"
+        );
+
+        // Then
+        assertThat(error.getField()).isEqualTo("title");
+        assertThat(error.getRejectedValue()).isEqualTo("");
+        assertThat(error.getMessage()).isEqualTo("Title cannot be blank");
+    }
+
+    @Test
+    void fieldValidationError_Setters_ShouldUpdateFields() {
+        // Given
+        GlobalExceptionHandler.FieldValidationError error = new GlobalExceptionHandler.FieldValidationError();
+
+        // When
+        error.setField("rating");
+        error.setRejectedValue(15.0);
+        error.setMessage("Rating cannot exceed 10.0");
+
+        // Then
+        assertThat(error.getField()).isEqualTo("rating");
+        assertThat(error.getRejectedValue()).isEqualTo(15.0);
+        assertThat(error.getMessage()).isEqualTo("Rating cannot exceed 10.0");
+    }
+
+    // --- Additional tests for exception classes coverage ---
+
+    @Test
+    void duplicateMovieException_WithMessageConstructor_ShouldCreateException() {
+        // When
+        DuplicateMovieException exception = new DuplicateMovieException("Custom error message");
+
+        // Then
+        assertThat(exception.getMessage()).isEqualTo("Custom error message");
+        assertThat(exception.getTitle()).isNull();
+        assertThat(exception.getDirector()).isNull();
+    }
+
+    @Test
+    void duplicateMovieException_WithMessageAndCauseConstructor_ShouldCreateException() {
+        // Given
+        Throwable cause = new RuntimeException("Root cause");
+
+        // When
+        DuplicateMovieException exception = new DuplicateMovieException("Custom error message", cause);
+
+        // Then
+        assertThat(exception.getMessage()).isEqualTo("Custom error message");
+        assertThat(exception.getCause()).isEqualTo(cause);
+        assertThat(exception.getTitle()).isNull();
+        assertThat(exception.getDirector()).isNull();
+    }
+
+    @Test
+    void duplicateMovieException_WithTitleAndDirectorConstructor_ShouldCreateException() {
+        // When
+        DuplicateMovieException exception = new DuplicateMovieException("Inception", "Christopher Nolan");
+
+        // Then
+        assertThat(exception.getMessage()).isEqualTo("Movie 'Inception' by director 'Christopher Nolan' already exists");
+        assertThat(exception.getTitle()).isEqualTo("Inception");
+        assertThat(exception.getDirector()).isEqualTo("Christopher Nolan");
+    }
+
+    @Test
+    void duplicateMovieException_GetterMethods_ShouldReturnValues() {
+        // Given
+        DuplicateMovieException exception = new DuplicateMovieException("Inception", "Christopher Nolan");
+
+        // When & Then
+        assertThat(exception.getTitle()).isEqualTo("Inception");
+        assertThat(exception.getDirector()).isEqualTo("Christopher Nolan");
+    }
+
+    @Test
+    void invalidMovieDataException_WithMessageConstructor_ShouldCreateException() {
+        // When
+        InvalidMovieDataException exception = new InvalidMovieDataException("Custom error message");
+
+        // Then
+        assertThat(exception.getMessage()).isEqualTo("Custom error message");
+        assertThat(exception.getField()).isNull();
+        assertThat(exception.getValue()).isNull();
+    }
+
+    @Test
+    void invalidMovieDataException_WithMessageAndCauseConstructor_ShouldCreateException() {
+        // Given
+        Throwable cause = new RuntimeException("Root cause");
+
+        // When
+        InvalidMovieDataException exception = new InvalidMovieDataException("Custom error message", cause);
+
+        // Then
+        assertThat(exception.getMessage()).isEqualTo("Custom error message");
+        assertThat(exception.getCause()).isEqualTo(cause);
+        assertThat(exception.getField()).isNull();
+        assertThat(exception.getValue()).isNull();
+    }
+
+    @Test
+    void invalidMovieDataException_WithFieldValueMessageConstructor_ShouldCreateException() {
+        // When
+        InvalidMovieDataException exception = new InvalidMovieDataException("rating", 15.0, "Rating cannot exceed 10.0");
+
+        // Then
+        assertThat(exception.getMessage()).isEqualTo("Invalid value for field 'rating': 15.0. Rating cannot exceed 10.0");
+        assertThat(exception.getField()).isEqualTo("rating");
+        assertThat(exception.getValue()).isEqualTo(15.0);
+    }
+
+    @Test
+    void invalidMovieDataException_GetterMethods_ShouldReturnValues() {
+        // Given
+        InvalidMovieDataException exception = new InvalidMovieDataException("rating", 15.0, "Rating cannot exceed 10.0");
+
+        // When & Then
+        assertThat(exception.getField()).isEqualTo("rating");
+        assertThat(exception.getValue()).isEqualTo(15.0);
+    }
+
+    @Test
+    void movieNotFoundException_WithMessageConstructor_ShouldCreateException() {
+        // When
+        MovieNotFoundException exception = new MovieNotFoundException("Custom error message");
+
+        // Then
+        assertThat(exception.getMessage()).isEqualTo("Custom error message");
+        assertThat(exception.getMovieId()).isNull();
+    }
+
+    @Test
+    void movieNotFoundException_WithMessageAndCauseConstructor_ShouldCreateException() {
+        // Given
+        Throwable cause = new RuntimeException("Root cause");
+
+        // When
+        MovieNotFoundException exception = new MovieNotFoundException("Custom error message", cause);
+
+        // Then
+        assertThat(exception.getMessage()).isEqualTo("Custom error message");
+        assertThat(exception.getCause()).isEqualTo(cause);
+        assertThat(exception.getMovieId()).isNull();
+    }
+
+    @Test
+    void movieNotFoundException_WithMovieIdConstructor_ShouldCreateException() {
+        // When
+        MovieNotFoundException exception = new MovieNotFoundException(123L);
+
+        // Then
+        assertThat(exception.getMessage()).isEqualTo("Movie with ID 123 not found");
+        assertThat(exception.getMovieId()).isEqualTo(123L);
+    }
+
+    @Test
+    void movieNotFoundException_GetterMethod_ShouldReturnValue() {
+        // Given
+        MovieNotFoundException exception = new MovieNotFoundException(456L);
+
+        // When & Then
+        assertThat(exception.getMovieId()).isEqualTo(456L);
+    }
+
+    // --- Additional tests for GlobalExceptionHandler coverage ---
+
+    @Test
+    void errorResponse_Setters_ShouldUpdateFields() {
+        // Given
+        GlobalExceptionHandler.ErrorResponse response = new GlobalExceptionHandler.ErrorResponse();
+
+        // When
+        response.setStatus(500);
+        response.setError("Internal Server Error");
+        response.setMessage("An unexpected error occurred");
+        response.setPath("/test/path");
+        LocalDateTime timestamp = LocalDateTime.now();
+        response.setTimestamp(timestamp);
+
+        // Then
+        assertThat(response.getStatus()).isEqualTo(500);
+        assertThat(response.getError()).isEqualTo("Internal Server Error");
+        assertThat(response.getMessage()).isEqualTo("An unexpected error occurred");
+        assertThat(response.getPath()).isEqualTo("/test/path");
+        assertThat(response.getTimestamp()).isEqualTo(timestamp);
+    }
+
+    @Test
+    void handleGenericException_ShouldReturn500Response() throws Exception {
+        // This test verifies that the generic exception handler is properly configured
+        // The actual generic exception handling is tested in integration tests
+        // where real exceptions can be thrown and caught by the handler
+        
+        // Given - we'll test the handler directly by creating an exception scenario
+        when(movieService.getMovieById(any())).thenThrow(new RuntimeException("Unexpected error"));
+
+        // When & Assert
+        mockMvc.perform(get("/movies/999")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.error").value("Internal Server Error"))
+                .andExpect(jsonPath("$.message").value("An unexpected error occurred. Please try again later."));
+    }
+
+    @Test
+    void errorResponse_DefaultConstructor_ShouldCreateEmptyResponse() {
+        // When
+        GlobalExceptionHandler.ErrorResponse response = new GlobalExceptionHandler.ErrorResponse();
+
+        // Then
+        assertThat(response.getStatus()).isEqualTo(0);
+        assertThat(response.getError()).isNull();
+        assertThat(response.getMessage()).isNull();
+        assertThat(response.getPath()).isNull();
+        assertThat(response.getTimestamp()).isNull();
+    }
+
+    @Test
+    void errorResponse_ParameterizedConstructor_ShouldCreateResponseWithValues() {
+        // Given
+        LocalDateTime timestamp = LocalDateTime.now();
+
+        // When
+        GlobalExceptionHandler.ErrorResponse response = new GlobalExceptionHandler.ErrorResponse(
+                404, "Not Found", "Resource not found", "/test/path", timestamp);
+
+        // Then
+        assertThat(response.getStatus()).isEqualTo(404);
+        assertThat(response.getError()).isEqualTo("Not Found");
+        assertThat(response.getMessage()).isEqualTo("Resource not found");
+        assertThat(response.getPath()).isEqualTo("/test/path");
+        assertThat(response.getTimestamp()).isEqualTo(timestamp);
     }
 }

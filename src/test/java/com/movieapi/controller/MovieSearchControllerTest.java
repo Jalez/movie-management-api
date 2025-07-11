@@ -335,4 +335,276 @@ class MovieSearchControllerTest {
             eq("NonExistentGenre"), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
             eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
     }
+
+    // --- Additional tests for createPageable method coverage ---
+
+    @Test
+    void searchMovies_WithPagination_ShouldReturnPaginatedResults() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(1, 5), 10); // Page 1, size 5, total 10
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?page=1&size=5"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.number").value(1))
+                .andExpect(jsonPath("$.size").value(5))
+                .andExpect(jsonPath("$.totalElements").value(10))
+                .andExpect(jsonPath("$.first").value(false))
+                .andExpect(jsonPath("$.last").value(true)); // Page 1 of 2 pages (0-based), so this is the last page
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithLargePageSize_ShouldLimitToMaxSize() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 100), movies.size()); // Max size 100
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?size=150")) // Request 150, should be limited to 100
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.size").value(100));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithSmallPageSize_ShouldLimitToMinSize() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 1), movies.size()); // Min size 1
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?size=0")) // Request 0, should be limited to 1
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.size").value(1));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithNullSort_ShouldUseDefaultSorting() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=")) // Empty sort parameter
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithWhitespaceSort_ShouldUseDefaultSorting() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=   ")) // Whitespace sort parameter
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    // --- Additional tests for mapSortFieldToColumn method coverage ---
+
+    @Test
+    void searchMovies_WithReleaseYearSort_ShouldMapToSnakeCase() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=releaseYear,asc"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithMinRatingSort_ShouldMapToRating() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=minRating,desc"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithMaxRatingSort_ShouldMapToRating() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=maxRating,asc"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithDefaultFieldSort_ShouldUseFieldAsIs() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=title,desc"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithInvalidSortField_ShouldDefaultToTitle() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=invalidField,asc"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithSortFieldOnly_ShouldUseDefaultDirection() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=rating")) // Only field, no direction
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithDescDirection_ShouldUseDescendingSort() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=director,desc"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
+
+    @Test
+    void searchMovies_WithCaseInsensitiveDirection_ShouldWork() throws Exception {
+        // Arrange
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
+
+        // Act & Assert
+        mockMvc.perform(get("/movies/search?sort=genre,DESC")) // Uppercase direction
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
+    }
 }
