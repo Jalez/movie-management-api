@@ -107,7 +107,20 @@ jobs:
       run: docker build -t movie-management-api:${{ github.sha }} .
     - name: Test Docker image
       run: |
+        # Start container and capture logs
+        echo "Starting Docker container..."
         docker run --rm -d --name test-container -p 8080:8080 movie-management-api:${{ github.sha }}
+        
+        # Wait a moment for container to start
+        sleep 5
+        
+        # Check if container is still running
+        if ! docker ps | grep -q test-container; then
+          echo "Container failed to start or crashed immediately"
+          echo "Container logs:"
+          docker logs test-container 2>/dev/null || echo "No logs available"
+          exit 1
+        fi
         
         # Wait for the application to start up (max 60 seconds)
         echo "Waiting for application to start..."
@@ -116,15 +129,28 @@ jobs:
             echo "Application is ready!"
             break
           fi
+          
+          # Check if container is still running
+          if ! docker ps | grep -q test-container; then
+            echo "Container crashed during startup"
+            echo "Container logs:"
+            docker logs test-container 2>/dev/null || echo "No logs available"
+            exit 1
+          fi
+          
           if [ $i -eq 60 ]; then
             echo "Application failed to start within 60 seconds"
+            echo "Container logs:"
             docker logs test-container
+            echo "Container status:"
+            docker ps -a | grep test-container
             exit 1
           fi
           sleep 1
         done
         
         # Test the health endpoint
+        echo "Testing health endpoint..."
         curl -f http://localhost:8080/actuator/health
         echo "Health check passed!"
         

@@ -34,6 +34,9 @@ ENV JAVA_OPTS="-Djava.security.egd=file:/dev/./urandom -Dspring.security.user.na
 ENV SPRING_PROFILES_ACTIVE=docker
 ENV SPRING_OUTPUT_ANSI_ENABLED=ALWAYS
 
+# Add debugging
+ENV DEBUG=true
+
 # Expose API port
 EXPOSE 8080
 
