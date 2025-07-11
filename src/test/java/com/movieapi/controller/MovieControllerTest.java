@@ -5,6 +5,7 @@ import com.movieapi.entity.Movie;
 import com.movieapi.exception.DuplicateMovieException;
 import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.exception.MovieNotFoundException;
+import main.java.com.movieapi.dto.PagedMoviesResponse;
 import com.movieapi.service.MovieService;
 import com.movieapi.testutil.MovieTestDataBuilder;
 import com.movieapi.validation.MovieSearchValidator;
@@ -591,5 +592,126 @@ class MovieControllerTest {
         assertThat(response.getMessage()).isEqualTo("Resource not found");
         assertThat(response.getPath()).isEqualTo("/test/path");
         assertThat(response.getTimestamp()).isEqualTo(timestamp);
+    }
+
+    // --- Additional tests for PagedMoviesResponse coverage ---
+
+    @Test
+    void pagedMoviesResponse_DefaultConstructor_ShouldCreateEmptyResponse() {
+        // When
+        PagedMoviesResponse response = new PagedMoviesResponse();
+
+        // Then
+        assertThat(response.getContent()).isNull();
+        assertThat(response.getNumber()).isEqualTo(0);
+        assertThat(response.getSize()).isEqualTo(0);
+        assertThat(response.getNumberOfElements()).isEqualTo(0);
+        assertThat(response.getTotalElements()).isEqualTo(0);
+        assertThat(response.getTotalPages()).isEqualTo(0);
+        assertThat(response.isFirst()).isFalse();
+        assertThat(response.isLast()).isFalse();
+        assertThat(response.isHasPrevious()).isFalse();
+        assertThat(response.isHasNext()).isFalse();
+    }
+
+    @Test
+    void pagedMoviesResponse_SettersAndGetters_ShouldWorkCorrectly() {
+        // Given
+        PagedMoviesResponse response = new PagedMoviesResponse();
+        List<Movie> movies = Arrays.asList(testMovie, testMovie2);
+
+        // When
+        response.setContent(movies);
+        response.setNumber(1);
+        response.setSize(20);
+        response.setNumberOfElements(2);
+        response.setTotalElements(50);
+        response.setTotalPages(3);
+        response.setFirst(false);
+        response.setLast(false);
+        response.setHasPrevious(true);
+        response.setHasNext(true);
+
+        // Then
+        assertThat(response.getContent()).isEqualTo(movies);
+        assertThat(response.getNumber()).isEqualTo(1);
+        assertThat(response.getSize()).isEqualTo(20);
+        assertThat(response.getNumberOfElements()).isEqualTo(2);
+        assertThat(response.getTotalElements()).isEqualTo(50);
+        assertThat(response.getTotalPages()).isEqualTo(3);
+        assertThat(response.isFirst()).isFalse();
+        assertThat(response.isLast()).isFalse();
+        assertThat(response.isHasPrevious()).isTrue();
+        assertThat(response.isHasNext()).isTrue();
+    }
+
+    @Test
+    void pagedMoviesResponse_WithAllFieldsSet_ShouldReturnCorrectValues() {
+        // Given
+        PagedMoviesResponse response = new PagedMoviesResponse();
+        List<Movie> movies = Arrays.asList(testMovie);
+
+        // When
+        response.setContent(movies);
+        response.setNumber(0);
+        response.setSize(10);
+        response.setNumberOfElements(1);
+        response.setTotalElements(1);
+        response.setTotalPages(1);
+        response.setFirst(true);
+        response.setLast(true);
+        response.setHasPrevious(false);
+        response.setHasNext(false);
+
+        // Then
+        assertThat(response.getContent()).hasSize(1);
+        assertThat(response.getContent().get(0)).isEqualTo(testMovie);
+        assertThat(response.getNumber()).isEqualTo(0);
+        assertThat(response.getSize()).isEqualTo(10);
+        assertThat(response.getNumberOfElements()).isEqualTo(1);
+        assertThat(response.getTotalElements()).isEqualTo(1);
+        assertThat(response.getTotalPages()).isEqualTo(1);
+        assertThat(response.isFirst()).isTrue();
+        assertThat(response.isLast()).isTrue();
+        assertThat(response.isHasPrevious()).isFalse();
+        assertThat(response.isHasNext()).isFalse();
+    }
+
+    @Test
+    void pagedMoviesResponse_WithEmptyContent_ShouldHandleNullAndEmptyLists() {
+        // Given
+        PagedMoviesResponse response = new PagedMoviesResponse();
+
+        // When - Set null content
+        response.setContent(null);
+
+        // Then
+        assertThat(response.getContent()).isNull();
+
+        // When - Set empty list
+        response.setContent(List.of());
+
+        // Then
+        assertThat(response.getContent()).isEmpty();
+    }
+
+    @Test
+    void pagedMoviesResponse_WithBoundaryValues_ShouldHandleEdgeCases() {
+        // Given
+        PagedMoviesResponse response = new PagedMoviesResponse();
+
+        // When - Set boundary values
+        response.setNumber(Integer.MAX_VALUE);
+        response.setSize(Integer.MAX_VALUE);
+        response.setNumberOfElements(Integer.MAX_VALUE);
+        response.setTotalElements(Long.MAX_VALUE);
+        response.setTotalPages(Integer.MAX_VALUE);
+
+        // Then
+        assertThat(response.getNumber()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(response.getSize()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(response.getNumberOfElements()).isEqualTo(Integer.MAX_VALUE);
+        assertThat(response.getTotalElements()).isEqualTo(Long.MAX_VALUE);
+        assertThat(response.getTotalPages()).isEqualTo(Integer.MAX_VALUE);
     }
 }
