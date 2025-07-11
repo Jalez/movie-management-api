@@ -16,6 +16,10 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -328,32 +332,39 @@ public class MovieController {
     }
 
     /**
-     * Search movies based on multiple criteria.
+     * Search movies based on multiple criteria with pagination and sorting support.
      * All query parameters are optional and can be combined.
      *
      * @param genre       the genre to filter by (case-sensitive, exact match)
      * @param releaseYear the release year to filter by (exact match)
      * @param minRating   the minimum rating to filter by (inclusive)
+     * @param maxRating   the maximum rating to filter by (inclusive)
+     * @param yearMin     the minimum release year to filter by (inclusive)
+     * @param yearMax     the maximum release year to filter by (inclusive)
+     * @param title       the title to search for (case-insensitive, partial match)
      * @param director    the director name to search for (case-insensitive partial match)
-     * @return ResponseEntity containing list of movies matching the criteria
+     * @param page        the page number (0-based, default: 0)
+     * @param size        the page size (default: 20, max: 100)
+     * @param sort        the sorting criteria (field,direction, e.g., "rating,desc")
+     * @return ResponseEntity containing Page of movies matching the criteria
      */
     @GetMapping("/search")
     @Operation(
-        summary = "Search movies",
-        description = "Search for movies using various criteria. All parameters are optional and can be combined for advanced filtering."
+        summary = "Search movies with pagination and sorting",
+        description = "Search for movies using various criteria with pagination and sorting support. All parameters are optional and can be combined for advanced filtering."
     )
     @ApiResponses(value = {
         @ApiResponse(
             responseCode = "200",
-            description = "Search completed successfully (may return empty list if no matches)",
+            description = "Search completed successfully (may return empty page if no matches)",
             content = @Content(
                 mediaType = "application/json",
-                array = @ArraySchema(schema = @Schema(implementation = Movie.class))
+                schema = @Schema(implementation = Object.class)
             )
         ),
         @ApiResponse(
             responseCode = "400",
-            description = "Invalid search parameters",
+            description = "Invalid search parameters or pagination parameters",
             content = @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
@@ -368,7 +379,7 @@ public class MovieController {
             )
         )
     })
-    public ResponseEntity<List<Movie>> searchMovies(
+    public ResponseEntity<Page<Movie>> searchMovies(
             @Parameter(
                 description = "Filter by movie genre (case-sensitive, exact match)",
                 example = "Sci-Fi",
@@ -388,21 +399,116 @@ public class MovieController {
             )
             @RequestParam(required = false) BigDecimal minRating,
             @Parameter(
+                description = "Filter by maximum rating (inclusive, 0.0-10.0)",
+                example = "9.5",
+                required = false
+            )
+            @RequestParam(required = false) BigDecimal maxRating,
+            @Parameter(
+                description = "Filter by minimum release year (inclusive)",
+                example = "2000",
+                required = false
+            )
+            @RequestParam(required = false) Integer yearMin,
+            @Parameter(
+                description = "Filter by maximum release year (inclusive)",
+                example = "2020",
+                required = false
+            )
+            @RequestParam(required = false) Integer yearMax,
+            @Parameter(
+                description = "Search by movie title (case-insensitive, partial match)",
+                example = "Inception",
+                required = false
+            )
+            @RequestParam(required = false) String title,
+            @Parameter(
                 description = "Search by director name (case-insensitive, partial match)",
                 example = "Christopher Nolan",
                 required = false
             )
-            @RequestParam(required = false) String director) {
+            @RequestParam(required = false) String director,
+            @Parameter(
+                description = "Page number (0-based)",
+                example = "0",
+                required = false
+            )
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(
+                description = "Page size (max 100)",
+                example = "20",
+                required = false
+            )
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(
+                description = "Sort criteria (field,direction). Available fields: title, director, genre, releaseYear, rating. Direction: asc, desc",
+                example = "rating,desc",
+                required = false
+            )
+            @RequestParam(defaultValue = "title,asc") String sort) {
         
-        logger.debug("GET /movies/search - Searching with criteria: genre={}, releaseYear={}, minRating={}, director={}", 
-                    genre, releaseYear, minRating, director);
+        logger.debug("GET /movies/search - Advanced search with criteria: genre={}, releaseYear={}, minRating={}, maxRating={}, yearMin={}, yearMax={}, title={}, director={}, page={}, size={}, sort={}", 
+                    genre, releaseYear, minRating, maxRating, yearMin, yearMax, title, director, page, size, sort);
         
         // Validate query parameters
-        movieSearchValidator.validateSearchParameters(genre, releaseYear, minRating, director);
+        movieSearchValidator.validateAdvancedSearchParameters(genre, releaseYear, minRating, maxRating, 
+                                                            yearMin, yearMax, title, director, page, size, sort);
         
-        List<Movie> movies = movieService.searchMovies(genre, releaseYear, minRating, director);
+        // Create pageable with sorting
+        Pageable pageable = createPageable(page, size, sort);
         
-        logger.info("GET /movies/search - Found {} movies matching criteria", movies.size());
+        Page<Movie> movies = movieService.searchMoviesAdvanced(genre, releaseYear, minRating, maxRating,
+                                                              yearMin, yearMax, title, director, pageable);
+        
+        logger.info("GET /movies/search - Found {} movies on page {} of {} total pages", 
+                   movies.getNumberOfElements(), movies.getNumber(), movies.getTotalPages());
         return ResponseEntity.ok(movies);
     }
+
+    /**
+     * Create Pageable object with sorting from request parameters.
+     */
+    private Pageable createPageable(int page, int size, String sort) {
+        // Validate and limit page size
+        size = Math.min(size, 100); // Max 100 items per page
+        size = Math.max(size, 1);   // Min 1 item per page
+        
+        if (sort == null || sort.trim().isEmpty()) {
+            return PageRequest.of(page, size);
+        }
+        
+        String[] sortParts = sort.split(",");
+        String field = sortParts[0].trim();
+        String direction = sortParts.length > 1 ? sortParts[1].trim() : "asc";
+        
+        // Validate sort field
+        if (!isValidSortField(field)) {
+            field = "title"; // Default to title if invalid
+        }
+        
+        // Map camelCase to snake_case for native queries
+        field = mapSortFieldToColumn(field);
+        
+        Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction) ? 
+                         Sort.Direction.DESC : Sort.Direction.ASC;
+        
+        return PageRequest.of(page, size, Sort.by(sortDirection, field));
+    }
+    
+    /**
+     * Validate if the sort field is allowed.
+     */
+    private boolean isValidSortField(String field) {
+        return List.of("title", "director", "genre", "releaseYear", "rating", "id").contains(field);
+        }
+
+                /**
+         * Map camelCase sort fields to snake_case column names for native queries.
+         */
+        private String mapSortFieldToColumn(String field) {
+            switch (field) {
+                case "releaseYear": return "release_year";
+                default: return field;
+            }
+        }
 }

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.Year;
@@ -366,7 +367,7 @@ class MovieServiceImplTest {
     void getTopRatedMovies_WhenValidLimit_ShouldReturnTopMovies() {
         // Given
         List<Movie> expectedMovies = Arrays.asList(anotherMovie, validMovie);
-        when(movieRepository.findTopRatedMovies(2)).thenReturn(expectedMovies);
+        when(movieRepository.findTopRatedMovies(any(Pageable.class))).thenReturn(expectedMovies);
 
         // When
         List<Movie> result = movieService.getTopRatedMovies(2);
@@ -374,7 +375,7 @@ class MovieServiceImplTest {
         // Then
         assertThat(result).hasSize(2);
         assertThat(result).containsExactlyElementsOf(expectedMovies);
-        verify(movieRepository).findTopRatedMovies(2);
+        verify(movieRepository).findTopRatedMovies(any(Pageable.class));
     }
 
     @Test
@@ -470,7 +471,349 @@ class MovieServiceImplTest {
         long result = movieService.countMoviesByGenre(null);
 
         // Then
-        assertThat(result).isEqualTo(0L);
+        assertThat(result).isZero();
         verifyNoInteractions(movieRepository);
+    }
+
+    // --- Additional tests for validateBusinessRules coverage ---
+
+    @Test
+    void createMovie_WhenTitleTooLong_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("a".repeat(256)) // 256 characters, exceeds 255 limit
+                .withDirector("Test Director")
+                .withGenre("Action")
+                .withReleaseYear(2020)
+                .withRating(8.0)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Title cannot exceed 255 characters");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void createMovie_WhenDirectorTooLong_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("Test Movie")
+                .withDirector("a".repeat(256)) // 256 characters, exceeds 255 limit
+                .withGenre("Action")
+                .withReleaseYear(2020)
+                .withRating(8.0)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Director name cannot exceed 255 characters");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void createMovie_WhenGenreTooLong_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("Test Movie")
+                .withDirector("Test Director")
+                .withGenre("a".repeat(101)) // 101 characters, exceeds 100 limit
+                .withReleaseYear(2020)
+                .withRating(8.0)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Genre cannot exceed 100 characters");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void createMovie_WhenRatingNegative_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("Test Movie")
+                .withDirector("Test Director")
+                .withGenre("Action")
+                .withReleaseYear(2020)
+                .withRating(-1.0)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Rating cannot be negative");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    // --- Additional tests for validateMovieData coverage ---
+
+    @Test
+    void createMovie_WhenDirectorIsNull_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("Test Movie")
+                .withDirector(null)
+                .withGenre("Action")
+                .withReleaseYear(2020)
+                .withRating(8.0)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Director cannot be null or empty");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void createMovie_WhenDirectorIsEmpty_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("Test Movie")
+                .withDirector("")
+                .withGenre("Action")
+                .withReleaseYear(2020)
+                .withRating(8.0)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Director cannot be null or empty");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void createMovie_WhenGenreIsNull_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("Test Movie")
+                .withDirector("Test Director")
+                .withGenre(null)
+                .withReleaseYear(2020)
+                .withRating(8.0)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Genre cannot be null or empty");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void createMovie_WhenGenreIsEmpty_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("Test Movie")
+                .withDirector("Test Director")
+                .withGenre("")
+                .withReleaseYear(2020)
+                .withRating(8.0)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Genre cannot be null or empty");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void createMovie_WhenReleaseYearIsNull_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("Test Movie")
+                .withDirector("Test Director")
+                .withGenre("Action")
+                .withReleaseYear(null)
+                .withRating(8.0)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Release year cannot be null");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void createMovie_WhenRatingIsNull_ShouldThrowInvalidMovieDataException() {
+        // Given
+        Movie invalidMovie = aMovie()
+                .withTitle("Test Movie")
+                .withDirector("Test Director")
+                .withGenre("Action")
+                .withReleaseYear(2020)
+                .withRating(null)
+                .build();
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
+                .isInstanceOf(InvalidMovieDataException.class)
+                .hasMessageContaining("Rating cannot be null");
+
+        verifyNoInteractions(movieRepository);
+    }
+
+    // --- Additional tests for getMoviesByDirector coverage ---
+
+    @Test
+    void getMoviesByDirector_WhenDirectorExists_ShouldReturnMovies() {
+        // Given
+        List<Movie> expectedMovies = Arrays.asList(validMovie);
+        when(movieRepository.findByDirectorContainingIgnoreCase("Christopher")).thenReturn(expectedMovies);
+
+        // When
+        List<Movie> result = movieService.getMoviesByDirector("Christopher");
+
+        // Then
+        assertThat(result).hasSize(1);
+        assertThat(result).containsExactlyElementsOf(expectedMovies);
+        verify(movieRepository).findByDirectorContainingIgnoreCase("Christopher");
+    }
+
+    @Test
+    void getMoviesByDirector_WhenDirectorIsNull_ShouldReturnEmptyList() {
+        // When
+        List<Movie> result = movieService.getMoviesByDirector(null);
+
+        // Then
+        assertThat(result).isEmpty();
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void getMoviesByDirector_WhenDirectorIsEmpty_ShouldReturnEmptyList() {
+        // When
+        List<Movie> result = movieService.getMoviesByDirector("");
+
+        // Then
+        assertThat(result).isEmpty();
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void getMoviesByDirector_WhenDirectorIsWhitespace_ShouldReturnEmptyList() {
+        // When
+        List<Movie> result = movieService.getMoviesByDirector("   ");
+
+        // Then
+        assertThat(result).isEmpty();
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void movieNotFoundException_GetterMethod_ShouldReturnValue() {
+        // Given
+        MovieNotFoundException exception = new MovieNotFoundException(456L);
+
+        // When & Then
+        assertThat(exception.getMovieId()).isEqualTo(456L);
+    }
+
+    // --- Additional tests for missing coverage areas ---
+
+    @Test
+    void updateMovie_WhenDirectorChanges_ShouldCheckForDuplicates() {
+        // Given
+        Movie existingMovie = aMovie()
+                .withId(1L)
+                .withTitle("Inception")
+                .withDirector("Christopher Nolan")
+                .withGenre("Sci-Fi")
+                .withReleaseYear(2010)
+                .withRating(8.8)
+                .build();
+
+        Movie updatedMovie = aMovie()
+                .withTitle("Inception")
+                .withDirector("New Director") // Different director
+                .withGenre("Sci-Fi")
+                .withReleaseYear(2010)
+                .withRating(8.8)
+                .build();
+
+        when(movieRepository.findById(1L)).thenReturn(Optional.of(existingMovie));
+        when(movieRepository.existsByTitleAndDirector("Inception", "New Director")).thenReturn(false);
+        when(movieRepository.save(any(Movie.class))).thenReturn(updatedMovie);
+
+        // When
+        Movie result = movieService.updateMovie(1L, updatedMovie);
+
+        // Then
+        assertThat(result).isNotNull();
+        verify(movieRepository).existsByTitleAndDirector("Inception", "New Director");
+        verify(movieRepository).save(any(Movie.class));
+    }
+
+    @Test
+    void updateMovie_WhenDirectorChangesToExistingDuplicate_ShouldThrowDuplicateMovieException() {
+        // Given
+        Movie existingMovie = aMovie()
+                .withId(1L)
+                .withTitle("Inception")
+                .withDirector("Christopher Nolan")
+                .withGenre("Sci-Fi")
+                .withReleaseYear(2010)
+                .withRating(8.8)
+                .build();
+
+        Movie updatedMovie = aMovie()
+                .withTitle("Inception")
+                .withDirector("Existing Director") // Different director that already exists
+                .withGenre("Sci-Fi")
+                .withReleaseYear(2010)
+                .withRating(8.8)
+                .build();
+
+        when(movieRepository.findById(1L)).thenReturn(Optional.of(existingMovie));
+        when(movieRepository.existsByTitleAndDirector("Inception", "Existing Director")).thenReturn(true);
+
+        // When & Then
+        assertThatThrownBy(() -> movieService.updateMovie(1L, updatedMovie))
+                .isInstanceOf(DuplicateMovieException.class)
+                .hasMessage("Movie 'Inception' by director 'Existing Director' already exists");
+
+        verify(movieRepository).existsByTitleAndDirector("Inception", "Existing Director");
+        verify(movieRepository, never()).save(any());
+    }
+
+    @Test
+    void getMoviesByYear_WhenYearIsNull_ShouldReturnEmptyList() {
+        // When
+        List<Movie> result = movieService.getMoviesByYear(null);
+
+        // Then
+        assertThat(result).isEmpty();
+        verifyNoInteractions(movieRepository);
+    }
+
+    @Test
+    void getMoviesByMinRating_WhenMinRatingIsNull_ShouldReturnAllMovies() {
+        // Given
+        List<Movie> allMovies = Arrays.asList(validMovie, anotherMovie);
+        when(movieRepository.findAll()).thenReturn(allMovies);
+
+        // When
+        List<Movie> result = movieService.getMoviesByMinRating(null);
+
+        // Then
+        assertThat(result).isEqualTo(allMovies);
+        verify(movieRepository).findAll();
+        verify(movieRepository, never()).findByRatingGreaterThanEqual(any());
     }
 }

@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
@@ -166,7 +168,8 @@ class MovieRepositoryTest {
     @Test
     void testFindTopRatedMovies() {
         // When
-        List<Movie> topMovies = movieRepository.findTopRatedMovies(2);
+        Pageable pageable = PageRequest.of(0, 2);
+        List<Movie> topMovies = movieRepository.findTopRatedMovies(pageable);
 
         // Then
         assertThat(topMovies).hasSize(2);

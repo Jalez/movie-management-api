@@ -9,6 +9,9 @@ import com.movieapi.service.MovieService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -212,7 +215,8 @@ public class MovieServiceImpl implements MovieService {
             return List.of();
         }
         
-        List<Movie> movies = movieRepository.findTopRatedMovies(limit);
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Movie> movies = movieRepository.findTopRatedMovies(pageable);
         logger.debug("Retrieved {} top rated movies", movies.size());
         return movies;
     }
@@ -332,5 +336,23 @@ public class MovieServiceImpl implements MovieService {
         if (movie.getGenre().length() > 100) {
             throw new InvalidMovieDataException("genre", movie.getGenre(), "Genre cannot exceed 100 characters");
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Movie> searchMoviesAdvanced(String genre, Integer releaseYear, BigDecimal minRating, 
+                                          BigDecimal maxRating, Integer yearMin, Integer yearMax,
+                                          String title, String director, Pageable pageable) {
+        logger.debug("Advanced search with criteria - genre: {}, releaseYear: {}, minRating: {}, maxRating: {}, " +
+                    "yearMin: {}, yearMax: {}, title: {}, director: {}, page: {}, size: {}", 
+                    genre, releaseYear, minRating, maxRating, yearMin, yearMax, title, director, 
+                    pageable.getPageNumber(), pageable.getPageSize());
+        
+        Page<Movie> movies = movieRepository.findMoviesAdvanced(genre, releaseYear, minRating, maxRating,
+                                                               yearMin, yearMax, title, director, pageable);
+        
+        logger.info("Advanced search returned {} movies on page {} of {} total pages", 
+                   movies.getNumberOfElements(), movies.getNumber(), movies.getTotalPages());
+        return movies;
     }
 }

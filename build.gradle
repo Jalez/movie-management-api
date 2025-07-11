@@ -3,6 +3,9 @@ plugins {
 	id 'org.springframework.boot' version '3.5.3'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'jacoco'
+	id 'checkstyle'
+	id 'com.github.spotbugs' version '6.0.4'
+	id 'org.owasp.dependencycheck' version '9.0.1'
 }
 
 // Build info for actuator
@@ -25,13 +28,64 @@ processResources {
 	}
 }
 
+// Checkstyle configuration
+checkstyle {
+	toolVersion = '10.15.0'
+	configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+	maxWarnings = 0
+}
+
+// SpotBugs configuration
+spotbugs {
+	toolVersion = '4.7.3'
+	effort = 'max'
+	reportLevel = 'medium'
+	excludeFilter = file("${rootDir}/config/spotbugs/exclude.xml")
+	ignoreFailures = true
+}
+
+spotbugsMain {
+	reports {
+		html {
+			required = true
+			outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+			stylesheet = 'fancy-hist.xsl'
+		}
+		xml {
+			required = true
+			outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.xml")
+		}
+	}
+}
+
+spotbugsTest {
+	reports {
+		html {
+			required = true
+			outputLocation = file("$buildDir/reports/spotbugs/test/spotbugs.html")
+			stylesheet = 'fancy-hist.xsl'
+		}
+		xml {
+			required = true
+			outputLocation = file("$buildDir/reports/spotbugs/test/spotbugs.xml")
+		}
+	}
+}
+
+// OWASP Dependency Check configuration
+dependencyCheck {
+	formats = ['HTML', 'JSON', 'SARIF']
+	suppressionFile = file("${rootDir}/config/dependency-check/suppressions.xml")
+	failBuildOnCVSS = 7
+}
+
 group = 'com.movieapi'
 version = '0.0.1-SNAPSHOT'
 description = 'A REST API for managing movies built with Spring Boot'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(24)
+		languageVersion = JavaLanguageVersion.of(21)
 	}
 }
 

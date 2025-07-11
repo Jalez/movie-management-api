@@ -89,7 +89,7 @@ If you prefer to run the application locally without Docker:
 
 ### Prerequisites for Manual Setup
 
-- **Java 17 or higher** (tested with Java 24)
+- **Java 17 or higher** (tested with Java 21/24)
 - **PostgreSQL 17.5** (installed via Homebrew)
 - **Gradle** (wrapper included, or install via Homebrew)
 
@@ -197,6 +197,32 @@ Once the application is running, you can access:
 - **Application Info:** http://localhost:8080/actuator/info - information about the application (e.g., version, build time)
 - **Metrics:** http://localhost:8080/actuator/metrics - Application metrics (e.g., memory usage, request counts)
 - **Swagger API Documentation:** http://localhost:8080/swagger-ui.html - Interactive API documentation
+
+## 🚀 CI/CD Pipeline
+
+This project includes a comprehensive CI/CD pipeline with the following features:
+
+### Quality Checks
+- **Tests:** Unit and integration tests with JUnit 5
+- **Code Coverage:** JaCoCo with 80% minimum coverage requirement
+- **Code Quality:** Checkstyle for code style enforcement
+- **Security:** SpotBugs for static analysis
+- **Dependency Security:** OWASP Dependency Check for vulnerability scanning
+
+### Pipeline Stages
+1. **Build & Test:** Compiles code and runs all tests
+2. **Quality Checks:** Runs code quality and security tools
+3. **Docker Build:** Creates and tests Docker image
+4. **Security Scan:** Runs Trivy vulnerability scanner
+5. **Notification:** Reports pipeline status
+
+### OWASP Dependency Check Note
+The OWASP Dependency Check may fail with a 403 error when accessing the NVD (National Vulnerability Database) API. This is a known issue that can be resolved by:
+
+1. **Getting a free NVD API key** from https://nvd.nist.gov/developers/request-an-api-key
+2. **The dependency check is configured to continue on error** in the CI pipeline, so it won't block builds
+
+For production use, it's recommended to obtain an NVD API key and configure it in your CI environment variables.
 
 ### Health Check Response
 ```json
@@ -650,6 +676,49 @@ time curl -X GET "http://localhost:8080/movies/search?minRating=8.0"
 **Description:**
 Search for movies using one or more optional query parameters. All parameters are optional and can be combined. Returns a list of movies matching all provided criteria.
 
+### Pagination Support
+
+All search endpoints (including `/movies/search`) support pagination using the following query parameters:
+
+| Parameter | Type    | Description                                  |
+|-----------|---------|----------------------------------------------|
+| page      | Integer | Page number (0-based, e.g., 0 for first page)|
+| size      | Integer | Number of results per page (default: 20)     |
+
+**Example:**
+
+Get the first page of 5 movies:
+```bash
+curl -X GET "http://localhost:8080/movies/search?page=0&size=5"
+```
+
+Get the second page of 10 movies:
+```bash
+curl -X GET "http://localhost:8080/movies/search?page=1&size=10"
+```
+
+**Response Format:**
+
+The response includes pagination metadata:
+```json
+{
+  "content": [ ... ],
+  "pageable": { ... },
+  "totalPages": 8,
+  "totalElements": 36,
+  "last": false,
+  "numberOfElements": 5,
+  "first": true,
+  "size": 5,
+  "number": 0,
+  "empty": false
+}
+```
+
+**Notes:**
+- If `page` or `size` are not provided, defaults are used.
+- If no results match, `content` will be an empty array.
+- Pagination is zero-based (`page=0` is the first page).
 **Query Parameters:**
 
 | Parameter    | Type     | Description                                                      |
@@ -928,6 +997,129 @@ For production deployment:
 4. Set up monitoring and logging
 5. Use production-grade PostgreSQL configuration
 6. Enable automatic health checks and recovery
+
+## 🔄 CI/CD Pipeline
+
+This project includes a comprehensive Continuous Integration and Continuous Deployment (CI/CD) pipeline using GitHub Actions to ensure code quality, reliability, and automated testing.
+
+### 🚀 Pipeline Overview
+
+The CI/CD pipeline runs automatically on:
+- **Push** to `main` and `develop` branches
+- **Pull Requests** to `main` and `develop` branches
+
+### 📋 Pipeline Stages
+
+#### 1. Build and Test
+- **Multi-JDK Testing**: Tests against Java 17, 21, and 24
+- **Gradle Build**: Compiles the project and runs all tests
+- **Test Execution**: Unit tests, integration tests, and H2 database tests
+- **Code Coverage**: JaCoCo coverage reports with 80% minimum requirement
+- **Artifact Upload**: Test results and coverage reports are archived
+
+#### 2. Quality Checks
+- **Checkstyle**: Code style and formatting validation
+- **SpotBugs**: Static analysis for potential bugs and security issues
+- **OWASP Dependency Check**: Security vulnerability scanning
+- **FindSecBugs**: Security-focused static analysis
+
+#### 3. Docker Build (Push Events Only)
+- **Docker Image Build**: Creates production-ready Docker image
+- **Container Testing**: Validates Docker image functionality
+- **Health Check**: Ensures application starts correctly in container
+
+#### 4. Security Scanning
+- **Trivy Vulnerability Scanner**: Comprehensive security analysis
+- **GitHub Security Tab**: Results uploaded to GitHub Security tab
+- **SARIF Reports**: Standardized security report format
+
+### 📊 Quality Metrics
+
+The pipeline enforces the following quality standards:
+
+| Metric | Requirement | Tool |
+|--------|-------------|------|
+| **Code Coverage** | ≥80% overall, ≥75% per class | JaCoCo |
+| **Code Style** | Checkstyle compliance | Checkstyle |
+| **Static Analysis** | No high/critical issues | SpotBugs |
+| **Security Vulnerabilities** | CVSS < 7.0 | OWASP Dependency Check |
+| **Build Success** | All tests pass | Gradle |
+
+### 🔧 Configuration Files
+
+The CI/CD pipeline uses the following configuration files:
+
+- **`.github/workflows/ci.yml`** - Main GitHub Actions workflow
+- **`config/checkstyle/checkstyle.xml`** - Code style rules
+- **`config/spotbugs/exclude.xml`** - Static analysis exclusions
+- **`config/dependency-check/suppressions.xml`** - Security scan suppressions
+
+### 📈 Pipeline Reports
+
+After each pipeline run, the following artifacts are available:
+
+#### Test Reports
+- **Test Results**: `build/reports/tests/` - Detailed test execution results
+- **Coverage Reports**: `build/reports/jacoco/` - Code coverage analysis
+- **Build Artifacts**: `build/libs/` - Compiled JAR files
+
+#### Quality Reports
+- **Checkstyle Reports**: `build/reports/checkstyle/` - Code style violations
+- **SpotBugs Reports**: `build/reports/spotbugs/` - Static analysis results
+- **Security Reports**: `build/reports/dependency-check/` - Vulnerability scan results
+
+### 🚨 Pipeline Failure Handling
+
+The pipeline will fail if:
+- ❌ Any tests fail
+- ❌ Code coverage drops below 80%
+- ❌ Checkstyle violations are found
+- ❌ Critical security vulnerabilities are detected
+- ❌ Build compilation fails
+
+### 🔍 Local Quality Checks
+
+You can run quality checks locally before pushing:
+
+```bash
+# Run all quality checks
+./gradlew check
+
+# Run specific checks
+./gradlew checkstyleMain checkstyleTest
+./gradlew spotbugsMain spotbugsTest
+./gradlew dependencyCheckAnalyze
+./gradlew jacocoTestCoverageVerification
+
+# Generate reports
+./gradlew jacocoTestReport
+```
+
+### 📝 Pipeline Customization
+
+The pipeline is designed to be easily extensible:
+
+1. **Add New Quality Tools**: Update `build.gradle` and workflow
+2. **Modify Coverage Requirements**: Update JaCoCo configuration
+3. **Add Deployment Steps**: Extend workflow with deployment jobs
+4. **Custom Notifications**: Add notification steps to the workflow
+
+### 🔐 Security Considerations
+
+- **Secrets Management**: Sensitive data handled via GitHub Secrets
+- **Dependency Scanning**: Regular security vulnerability checks
+- **Container Security**: Docker image security scanning
+- **Code Quality**: Static analysis prevents security issues
+
+### 📊 Monitoring and Metrics
+
+The pipeline provides:
+- **Build Status**: Visual indicators for pass/fail
+- **Test Coverage Trends**: Historical coverage data
+- **Security Alerts**: Automated vulnerability notifications
+- **Performance Metrics**: Build time and resource usage
+
+---
 
 ## 🔮 Upcoming Features
 
