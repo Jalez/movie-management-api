@@ -59,36 +59,36 @@ class MovieSearchIntegrationTest {
         // Test search by genre
         mockMvc.perform(get("/movies/search?genre=Sci-Fi"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[*].genre").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("Sci-Fi"))));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[*].genre").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is("Sci-Fi"))));
 
         // Test search by release year
         mockMvc.perform(get("/movies/search?releaseYear=2010"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].title").value("Inception"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Inception"));
 
         // Test search by minimum rating
         mockMvc.perform(get("/movies/search?minRating=8.8"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[*].rating").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.greaterThanOrEqualTo(8.8))));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[*].rating").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.greaterThanOrEqualTo(8.8))));
 
         // Test search by director (partial match)
         mockMvc.perform(get("/movies/search?director=nolan"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].director").value("Christopher Nolan"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].director").value("Christopher Nolan"));
 
         // Test multiple criteria
         mockMvc.perform(get("/movies/search?genre=Sci-Fi&minRating=8.7"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.content.length()").value(2));
 
         // Test no results
         mockMvc.perform(get("/movies/search?genre=NonExistent"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.content.length()").value(0));
     }
 
     @Test
@@ -157,7 +157,7 @@ class MovieSearchIntegrationTest {
         // Test search with no parameters should return all movies
         mockMvc.perform(get("/movies/search"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.content.length()").value(2));
     }
 
     private Movie createTestMovie(String title, String director, String genre, Integer year, String rating) {

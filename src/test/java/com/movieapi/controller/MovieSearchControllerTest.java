@@ -9,6 +9,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -69,105 +73,145 @@ class MovieSearchControllerTest {
     void searchMovies_WithNoParameters_ShouldReturnAllMovies() throws Exception {
         // Arrange
         List<Movie> movies = Arrays.asList(testMovie, testMovie2);
-        when(movieService.searchMovies(null, null, null, null)).thenReturn(movies);
+        Page<Movie> moviePage = new PageImpl<>(movies, PageRequest.of(0, 20), movies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
 
         // Act & Assert
         mockMvc.perform(get("/movies/search"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[1].id").value(2));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[1].id").value(2))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(true));
 
-        verify(movieService).searchMovies(null, null, null, null);
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
     }
 
     @Test
     void searchMovies_WithGenreParameter_ShouldReturnFilteredMovies() throws Exception {
         // Arrange
         List<Movie> sciFiMovies = Arrays.asList(testMovie, testMovie2);
-        when(movieService.searchMovies("Sci-Fi", null, null, null)).thenReturn(sciFiMovies);
+        Page<Movie> moviePage = new PageImpl<>(sciFiMovies, PageRequest.of(0, 20), sciFiMovies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq("Sci-Fi"), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?genre=Sci-Fi"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].genre").value("Sci-Fi"))
-                .andExpect(jsonPath("$[1].genre").value("Sci-Fi"));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].genre").value("Sci-Fi"))
+                .andExpect(jsonPath("$.content[1].genre").value("Sci-Fi"));
 
-        verify(movieService).searchMovies("Sci-Fi", null, null, null);
+        verify(movieService).searchMoviesAdvanced(
+            eq("Sci-Fi"), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
     }
 
     @Test
     void searchMovies_WithReleaseYearParameter_ShouldReturnFilteredMovies() throws Exception {
         // Arrange
         List<Movie> moviesFrom2010 = Arrays.asList(testMovie);
-        when(movieService.searchMovies(null, 2010, null, null)).thenReturn(moviesFrom2010);
+        Page<Movie> moviePage = new PageImpl<>(moviesFrom2010, PageRequest.of(0, 20), moviesFrom2010.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq(2010), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?releaseYear=2010"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].releaseYear").value(2010));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].releaseYear").value(2010));
 
-        verify(movieService).searchMovies(null, 2010, null, null);
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq(2010), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
     }
 
     @Test
     void searchMovies_WithMinRatingParameter_ShouldReturnFilteredMovies() throws Exception {
         // Arrange
         List<Movie> highRatedMovies = Arrays.asList(testMovie);
-        when(movieService.searchMovies(null, null, new BigDecimal("8.8"), null)).thenReturn(highRatedMovies);
+        Page<Movie> moviePage = new PageImpl<>(highRatedMovies, PageRequest.of(0, 20), highRatedMovies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq(new BigDecimal("8.8")), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(moviePage);
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?minRating=8.8"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].rating").value(8.8));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].rating").value(8.8));
 
-        verify(movieService).searchMovies(null, null, new BigDecimal("8.8"), null);
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq(new BigDecimal("8.8")), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
     }
 
     @Test
     void searchMovies_WithDirectorParameter_ShouldReturnFilteredMovies() throws Exception {
         // Arrange
         List<Movie> nolanMovies = Arrays.asList(testMovie);
-        when(movieService.searchMovies(null, null, null, "nolan")).thenReturn(nolanMovies);
+        Page<Movie> moviePage = new PageImpl<>(nolanMovies, PageRequest.of(0, 20), nolanMovies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq("nolan"), any(Pageable.class)))
+            .thenReturn(moviePage);
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?director=nolan"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].director").value("Christopher Nolan"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].director").value("Christopher Nolan"));
 
-        verify(movieService).searchMovies(null, null, null, "nolan");
+        verify(movieService).searchMoviesAdvanced(
+            eq((String) null), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq("nolan"), any(Pageable.class));
     }
 
     @Test
     void searchMovies_WithMultipleParameters_ShouldReturnFilteredMovies() throws Exception {
         // Arrange
         List<Movie> filteredMovies = Arrays.asList(testMovie);
-        when(movieService.searchMovies("Sci-Fi", 2010, new BigDecimal("8.0"), "christopher")).thenReturn(filteredMovies);
+        Page<Movie> moviePage = new PageImpl<>(filteredMovies, PageRequest.of(0, 20), filteredMovies.size());
+        when(movieService.searchMoviesAdvanced(
+            eq("Sci-Fi"), eq(2010), eq(new BigDecimal("8.0")), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq("christopher"), any(Pageable.class)))
+            .thenReturn(moviePage);
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?genre=Sci-Fi&releaseYear=2010&minRating=8.0&director=christopher"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(1));
 
-        verify(movieService).searchMovies("Sci-Fi", 2010, new BigDecimal("8.0"), "christopher");
+        verify(movieService).searchMoviesAdvanced(
+            eq("Sci-Fi"), eq(2010), eq(new BigDecimal("8.0")), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq("christopher"), any(Pageable.class));
     }
 
     @Test
     void searchMovies_WithEmptyGenre_ShouldReturn400() throws Exception {
         // Arrange
         doThrow(new InvalidMovieDataException("genre", "", "Genre cannot be empty if provided"))
-                .when(movieSearchValidator).validateSearchParameters("", null, null, null);
+                .when(movieSearchValidator).validateAdvancedSearchParameters("", null, null, null, null, null, null, null, 0, 20, "title,asc");
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?genre="))
@@ -176,14 +220,14 @@ class MovieSearchControllerTest {
                 .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
                 .andExpect(jsonPath("$.message").value(containsString("Genre cannot be empty")));
 
-        verify(movieService, never()).searchMovies(any(), any(), any(), any());
+        verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
     void searchMovies_WithEmptyDirector_ShouldReturn400() throws Exception {
         // Arrange
         doThrow(new InvalidMovieDataException("director", "", "Director cannot be empty if provided"))
-                .when(movieSearchValidator).validateSearchParameters(null, null, null, "");
+                .when(movieSearchValidator).validateAdvancedSearchParameters(null, null, null, null, null, null, null, "", 0, 20, "title,asc");
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?director="))
@@ -192,14 +236,14 @@ class MovieSearchControllerTest {
                 .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
                 .andExpect(jsonPath("$.message").value(containsString("Director cannot be empty")));
 
-        verify(movieService, never()).searchMovies(any(), any(), any(), any());
+        verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
     void searchMovies_WithInvalidReleaseYear_ShouldReturn400() throws Exception {
         // Arrange
         doThrow(new InvalidMovieDataException("releaseYear", 1800, "Release year must be 1900 or later"))
-                .when(movieSearchValidator).validateSearchParameters(null, 1800, null, null);
+                .when(movieSearchValidator).validateAdvancedSearchParameters(null, 1800, null, null, null, null, null, null, 0, 20, "title,asc");
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?releaseYear=1800"))
@@ -208,7 +252,7 @@ class MovieSearchControllerTest {
                 .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
                 .andExpect(jsonPath("$.message").value(containsString("Release year must be 1900 or later")));
 
-        verify(movieService, never()).searchMovies(any(), any(), any(), any());
+        verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -216,7 +260,7 @@ class MovieSearchControllerTest {
         // Arrange
         doThrow(new InvalidMovieDataException("releaseYear", 2050, 
                 "Release year cannot be more than 5 years in the future (current year: " + Year.now().getValue() + ")"))
-                .when(movieSearchValidator).validateSearchParameters(null, 2050, null, null);
+                .when(movieSearchValidator).validateAdvancedSearchParameters(null, 2050, null, null, null, null, null, null, 0, 20, "title,asc");
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?releaseYear=2050"))
@@ -225,14 +269,14 @@ class MovieSearchControllerTest {
                 .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
                 .andExpect(jsonPath("$.message").value(containsString("Release year cannot be more than 5 years in the future")));
 
-        verify(movieService, never()).searchMovies(any(), any(), any(), any());
+        verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
     void searchMovies_WithNegativeMinRating_ShouldReturn400() throws Exception {
         // Arrange
         doThrow(new InvalidMovieDataException("minRating", new BigDecimal("-1.0"), "Minimum rating cannot be negative"))
-                .when(movieSearchValidator).validateSearchParameters(null, null, new BigDecimal("-1.0"), null);
+                .when(movieSearchValidator).validateAdvancedSearchParameters(null, null, new BigDecimal("-1.0"), null, null, null, null, null, 0, 20, "title,asc");
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?minRating=-1.0"))
@@ -241,14 +285,14 @@ class MovieSearchControllerTest {
                 .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
                 .andExpect(jsonPath("$.message").value(containsString("Minimum rating cannot be negative")));
 
-        verify(movieService, never()).searchMovies(any(), any(), any(), any());
+        verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
     void searchMovies_WithExcessiveMinRating_ShouldReturn400() throws Exception {
         // Arrange
         doThrow(new InvalidMovieDataException("minRating", new BigDecimal("15.0"), "Minimum rating cannot exceed 10.0"))
-                .when(movieSearchValidator).validateSearchParameters(null, null, new BigDecimal("15.0"), null);
+                .when(movieSearchValidator).validateAdvancedSearchParameters(null, null, new BigDecimal("15.0"), null, null, null, null, null, 0, 20, "title,asc");
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?minRating=15.0"))
@@ -257,7 +301,7 @@ class MovieSearchControllerTest {
                 .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
                 .andExpect(jsonPath("$.message").value(containsString("Minimum rating cannot exceed 10.0")));
 
-        verify(movieService, never()).searchMovies(any(), any(), any(), any());
+        verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -268,20 +312,27 @@ class MovieSearchControllerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Invalid Parameter"));
 
-        verify(movieService, never()).searchMovies(any(), any(), any(), any());
+        verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
     void searchMovies_WithNoResults_ShouldReturnEmptyArray() throws Exception {
         // Arrange
-        when(movieService.searchMovies("NonExistentGenre", null, null, null)).thenReturn(List.of());
+        Page<Movie> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+        when(movieService.searchMoviesAdvanced(
+            eq("NonExistentGenre"), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class)))
+            .thenReturn(emptyPage);
 
         // Act & Assert
         mockMvc.perform(get("/movies/search?genre=NonExistentGenre"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.content.length()").value(0))
+                .andExpect(jsonPath("$.totalElements").value(0));
 
-        verify(movieService).searchMovies("NonExistentGenre", null, null, null);
+        verify(movieService).searchMoviesAdvanced(
+            eq("NonExistentGenre"), eq((Integer) null), eq((BigDecimal) null), eq((BigDecimal) null), 
+            eq((Integer) null), eq((Integer) null), eq((String) null), eq((String) null), any(Pageable.class));
     }
 }

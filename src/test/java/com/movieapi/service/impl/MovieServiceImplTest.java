@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.Year;
@@ -366,7 +367,7 @@ class MovieServiceImplTest {
     void getTopRatedMovies_WhenValidLimit_ShouldReturnTopMovies() {
         // Given
         List<Movie> expectedMovies = Arrays.asList(anotherMovie, validMovie);
-        when(movieRepository.findTopRatedMovies(2)).thenReturn(expectedMovies);
+        when(movieRepository.findTopRatedMovies(any(Pageable.class))).thenReturn(expectedMovies);
 
         // When
         List<Movie> result = movieService.getTopRatedMovies(2);
@@ -374,7 +375,7 @@ class MovieServiceImplTest {
         // Then
         assertThat(result).hasSize(2);
         assertThat(result).containsExactlyElementsOf(expectedMovies);
-        verify(movieRepository).findTopRatedMovies(2);
+        verify(movieRepository).findTopRatedMovies(any(Pageable.class));
     }
 
     @Test
