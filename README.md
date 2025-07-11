@@ -89,7 +89,7 @@ If you prefer to run the application locally without Docker:
 
 ### Prerequisites for Manual Setup
 
-- **Java 17 or higher** (tested with Java 24)
+- **Java 17 or higher** (tested with Java 21/24)
 - **PostgreSQL 17.5** (installed via Homebrew)
 - **Gradle** (wrapper included, or install via Homebrew)
 
@@ -971,6 +971,129 @@ For production deployment:
 4. Set up monitoring and logging
 5. Use production-grade PostgreSQL configuration
 6. Enable automatic health checks and recovery
+
+## 🔄 CI/CD Pipeline
+
+This project includes a comprehensive Continuous Integration and Continuous Deployment (CI/CD) pipeline using GitHub Actions to ensure code quality, reliability, and automated testing.
+
+### 🚀 Pipeline Overview
+
+The CI/CD pipeline runs automatically on:
+- **Push** to `main` and `develop` branches
+- **Pull Requests** to `main` and `develop` branches
+
+### 📋 Pipeline Stages
+
+#### 1. Build and Test
+- **Multi-JDK Testing**: Tests against Java 17, 21, and 24
+- **Gradle Build**: Compiles the project and runs all tests
+- **Test Execution**: Unit tests, integration tests, and H2 database tests
+- **Code Coverage**: JaCoCo coverage reports with 80% minimum requirement
+- **Artifact Upload**: Test results and coverage reports are archived
+
+#### 2. Quality Checks
+- **Checkstyle**: Code style and formatting validation
+- **SpotBugs**: Static analysis for potential bugs and security issues
+- **OWASP Dependency Check**: Security vulnerability scanning
+- **FindSecBugs**: Security-focused static analysis
+
+#### 3. Docker Build (Push Events Only)
+- **Docker Image Build**: Creates production-ready Docker image
+- **Container Testing**: Validates Docker image functionality
+- **Health Check**: Ensures application starts correctly in container
+
+#### 4. Security Scanning
+- **Trivy Vulnerability Scanner**: Comprehensive security analysis
+- **GitHub Security Tab**: Results uploaded to GitHub Security tab
+- **SARIF Reports**: Standardized security report format
+
+### 📊 Quality Metrics
+
+The pipeline enforces the following quality standards:
+
+| Metric | Requirement | Tool |
+|--------|-------------|------|
+| **Code Coverage** | ≥80% overall, ≥75% per class | JaCoCo |
+| **Code Style** | Checkstyle compliance | Checkstyle |
+| **Static Analysis** | No high/critical issues | SpotBugs |
+| **Security Vulnerabilities** | CVSS < 7.0 | OWASP Dependency Check |
+| **Build Success** | All tests pass | Gradle |
+
+### 🔧 Configuration Files
+
+The CI/CD pipeline uses the following configuration files:
+
+- **`.github/workflows/ci.yml`** - Main GitHub Actions workflow
+- **`config/checkstyle/checkstyle.xml`** - Code style rules
+- **`config/spotbugs/exclude.xml`** - Static analysis exclusions
+- **`config/dependency-check/suppressions.xml`** - Security scan suppressions
+
+### 📈 Pipeline Reports
+
+After each pipeline run, the following artifacts are available:
+
+#### Test Reports
+- **Test Results**: `build/reports/tests/` - Detailed test execution results
+- **Coverage Reports**: `build/reports/jacoco/` - Code coverage analysis
+- **Build Artifacts**: `build/libs/` - Compiled JAR files
+
+#### Quality Reports
+- **Checkstyle Reports**: `build/reports/checkstyle/` - Code style violations
+- **SpotBugs Reports**: `build/reports/spotbugs/` - Static analysis results
+- **Security Reports**: `build/reports/dependency-check/` - Vulnerability scan results
+
+### 🚨 Pipeline Failure Handling
+
+The pipeline will fail if:
+- ❌ Any tests fail
+- ❌ Code coverage drops below 80%
+- ❌ Checkstyle violations are found
+- ❌ Critical security vulnerabilities are detected
+- ❌ Build compilation fails
+
+### 🔍 Local Quality Checks
+
+You can run quality checks locally before pushing:
+
+```bash
+# Run all quality checks
+./gradlew check
+
+# Run specific checks
+./gradlew checkstyleMain checkstyleTest
+./gradlew spotbugsMain spotbugsTest
+./gradlew dependencyCheckAnalyze
+./gradlew jacocoTestCoverageVerification
+
+# Generate reports
+./gradlew jacocoTestReport
+```
+
+### 📝 Pipeline Customization
+
+The pipeline is designed to be easily extensible:
+
+1. **Add New Quality Tools**: Update `build.gradle` and workflow
+2. **Modify Coverage Requirements**: Update JaCoCo configuration
+3. **Add Deployment Steps**: Extend workflow with deployment jobs
+4. **Custom Notifications**: Add notification steps to the workflow
+
+### 🔐 Security Considerations
+
+- **Secrets Management**: Sensitive data handled via GitHub Secrets
+- **Dependency Scanning**: Regular security vulnerability checks
+- **Container Security**: Docker image security scanning
+- **Code Quality**: Static analysis prevents security issues
+
+### 📊 Monitoring and Metrics
+
+The pipeline provides:
+- **Build Status**: Visual indicators for pass/fail
+- **Test Coverage Trends**: Historical coverage data
+- **Security Alerts**: Automated vulnerability notifications
+- **Performance Metrics**: Build time and resource usage
+
+---
 
 ## 🔮 Upcoming Features
 
