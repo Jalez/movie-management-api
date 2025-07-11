@@ -31,6 +31,7 @@ USER spring:spring
 
 # Set secure defaults
 ENV JAVA_OPTS="-Djava.security.egd=file:/dev/./urandom -Dspring.security.user.name=admin"
+ENV SPRING_PROFILES_ACTIVE=docker
 ENV SPRING_OUTPUT_ANSI_ENABLED=ALWAYS
 
 # Expose API port

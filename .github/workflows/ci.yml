@@ -108,8 +108,27 @@ jobs:
     - name: Test Docker image
       run: |
         docker run --rm -d --name test-container -p 8080:8080 movie-management-api:${{ github.sha }}
-        sleep 30
-        curl -f http://localhost:8080/actuator/health || exit 1
+        
+        # Wait for the application to start up (max 60 seconds)
+        echo "Waiting for application to start..."
+        for i in {1..60}; do
+          if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
+            echo "Application is ready!"
+            break
+          fi
+          if [ $i -eq 60 ]; then
+            echo "Application failed to start within 60 seconds"
+            docker logs test-container
+            exit 1
+          fi
+          sleep 1
+        done
+        
+        # Test the health endpoint
+        curl -f http://localhost:8080/actuator/health
+        echo "Health check passed!"
+        
+        # Clean up
         docker stop test-container
     - name: Upload Docker image
       uses: actions/upload-artifact@v4
