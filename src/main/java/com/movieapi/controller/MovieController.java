@@ -502,15 +502,13 @@ public class MovieController {
         return List.of("title", "director", "genre", "releaseYear", "rating", "id").contains(field);
         }
 
-        /**
+                /**
          * Map camelCase sort fields to snake_case column names for native queries.
          */
         private String mapSortFieldToColumn(String field) {
             switch (field) {
                 case "releaseYear": return "release_year";
-                case "minRating": return "rating";
-                case "maxRating": return "rating";
                 default: return field;
             }
-    }
+        }
 }
