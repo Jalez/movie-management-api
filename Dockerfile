@@ -1,5 +1,5 @@
 # Build stage
-FROM gradle:jdk24-noble AS build
+FROM gradle:jdk21-noble AS build
 WORKDIR /app
 
 # Copy only the files needed for build first
@@ -7,12 +7,13 @@ COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 COPY gradlew ./
 COPY src ./src
+COPY config ./config
 
 # Build with gradle
 RUN ./gradlew build --no-daemon
 
 # Runtime stage
-FROM eclipse-temurin:24-jdk-noble
+FROM eclipse-temurin:21-jdk-noble
 WORKDIR /app
 
 # Add curl for healthcheck
