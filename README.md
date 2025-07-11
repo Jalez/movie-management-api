@@ -650,6 +650,49 @@ time curl -X GET "http://localhost:8080/movies/search?minRating=8.0"
 **Description:**
 Search for movies using one or more optional query parameters. All parameters are optional and can be combined. Returns a list of movies matching all provided criteria.
 
+### Pagination Support
+
+All search endpoints (including `/movies/search`) support pagination using the following query parameters:
+
+| Parameter | Type    | Description                                  |
+|-----------|---------|----------------------------------------------|
+| page      | Integer | Page number (0-based, e.g., 0 for first page)|
+| size      | Integer | Number of results per page (default: 20)     |
+
+**Example:**
+
+Get the first page of 5 movies:
+```bash
+curl -X GET "http://localhost:8080/movies/search?page=0&size=5"
+```
+
+Get the second page of 10 movies:
+```bash
+curl -X GET "http://localhost:8080/movies/search?page=1&size=10"
+```
+
+**Response Format:**
+
+The response includes pagination metadata:
+```json
+{
+  "content": [ ... ],
+  "pageable": { ... },
+  "totalPages": 8,
+  "totalElements": 36,
+  "last": false,
+  "numberOfElements": 5,
+  "first": true,
+  "size": 5,
+  "number": 0,
+  "empty": false
+}
+```
+
+**Notes:**
+- If `page` or `size` are not provided, defaults are used.
+- If no results match, `content` will be an empty array.
+- Pagination is zero-based (`page=0` is the first page).
 **Query Parameters:**
 
 | Parameter    | Type     | Description                                                      |
