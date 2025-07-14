@@ -3,6 +3,7 @@ package com.movieapi.controller;
 import com.movieapi.exception.DuplicateMovieException;
 import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.exception.MovieNotFoundException;
+import com.movieapi.exception.ReviewNotFoundException;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,6 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,18 +35,36 @@ public class GlobalExceptionHandler {
      * Handle Movie Not Found exceptions.
      */
     @ExceptionHandler(MovieNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleMovieNotFoundException(
+    public ResponseEntity<com.movieapi.dto.ErrorResponses.MovieNotFoundError> handleMovieNotFoundException(
             MovieNotFoundException ex, WebRequest request) {
         
         logger.warn("Movie not found: {}", ex.getMessage());
         
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Movie Not Found",
-                ex.getMessage(),
-                request.getDescription(false).replace("uri=", ""),
-                LocalDateTime.now()
-        );
+        com.movieapi.dto.ErrorResponses.MovieNotFoundError errorResponse = new com.movieapi.dto.ErrorResponses.MovieNotFoundError();
+        errorResponse.status = HttpStatus.NOT_FOUND.value();
+        errorResponse.error = "Movie Not Found";
+        errorResponse.message = ex.getMessage();
+        errorResponse.path = request.getDescription(false).replace("uri=", "");
+        errorResponse.timestamp = LocalDateTime.now().toString();
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    /**
+     * Handle Review Not Found exceptions.
+     */
+    @ExceptionHandler(ReviewNotFoundException.class)
+    public ResponseEntity<com.movieapi.dto.ErrorResponses.ReviewNotFoundError> handleReviewNotFoundException(
+            ReviewNotFoundException ex, WebRequest request) {
+        
+        logger.warn("Review not found: {}", ex.getMessage());
+        
+        com.movieapi.dto.ErrorResponses.ReviewNotFoundError errorResponse = new com.movieapi.dto.ErrorResponses.ReviewNotFoundError();
+        errorResponse.status = HttpStatus.NOT_FOUND.value();
+        errorResponse.error = "Review Not Found";
+        errorResponse.message = ex.getMessage();
+        errorResponse.path = request.getDescription(false).replace("uri=", "");
+        errorResponse.timestamp = LocalDateTime.now().toString();
         
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
@@ -55,18 +73,17 @@ public class GlobalExceptionHandler {
      * Handle Duplicate Movie exceptions.
      */
     @ExceptionHandler(DuplicateMovieException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateMovieException(
+    public ResponseEntity<com.movieapi.dto.ErrorResponses.ConflictError> handleDuplicateMovieException(
             DuplicateMovieException ex, WebRequest request) {
         
         logger.warn("Duplicate movie: {}", ex.getMessage());
         
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                "Duplicate Movie",
-                ex.getMessage(),
-                request.getDescription(false).replace("uri=", ""),
-                LocalDateTime.now()
-        );
+        com.movieapi.dto.ErrorResponses.ConflictError errorResponse = new com.movieapi.dto.ErrorResponses.ConflictError();
+        errorResponse.status = HttpStatus.CONFLICT.value();
+        errorResponse.error = "Conflict";
+        errorResponse.message = ex.getMessage();
+        errorResponse.path = request.getDescription(false).replace("uri=", "");
+        errorResponse.timestamp = LocalDateTime.now().toString();
         
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
@@ -75,18 +92,17 @@ public class GlobalExceptionHandler {
      * Handle Invalid Movie Data exceptions.
      */
     @ExceptionHandler(InvalidMovieDataException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidMovieDataException(
+    public ResponseEntity<com.movieapi.dto.ErrorResponses.BadRequestError> handleInvalidMovieDataException(
             InvalidMovieDataException ex, WebRequest request) {
         
         logger.warn("Invalid movie data: {}", ex.getMessage());
         
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Invalid Movie Data",
-                ex.getMessage(),
-                request.getDescription(false).replace("uri=", ""),
-                LocalDateTime.now()
-        );
+        com.movieapi.dto.ErrorResponses.BadRequestError errorResponse = new com.movieapi.dto.ErrorResponses.BadRequestError();
+        errorResponse.status = HttpStatus.BAD_REQUEST.value();
+        errorResponse.error = "Bad Request";
+        errorResponse.message = ex.getMessage();
+        errorResponse.path = request.getDescription(false).replace("uri=", "");
+        errorResponse.timestamp = LocalDateTime.now().toString();
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
@@ -95,28 +111,27 @@ public class GlobalExceptionHandler {
      * Handle Bean Validation exceptions (from @Valid annotations).
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(
+    public ResponseEntity<com.movieapi.dto.ErrorResponses.ValidationError> handleValidationExceptions(
             MethodArgumentNotValidException ex, WebRequest request) {
         
         logger.warn("Validation failed: {}", ex.getMessage());
         
-        List<FieldValidationError> fieldErrors = ex.getBindingResult().getFieldErrors()
+        List<com.movieapi.dto.ErrorResponses.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors()
                 .stream()
-                .map(error -> new FieldValidationError(
+                .map(error -> new com.movieapi.dto.ErrorResponses.FieldError(
                         error.getField(),
                         error.getRejectedValue(),
                         error.getDefaultMessage()
                 ))
                 .collect(Collectors.toList());
         
-        ValidationErrorResponse errorResponse = new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Validation Failed",
-                "Request validation failed",
-                request.getDescription(false).replace("uri=", ""),
-                LocalDateTime.now(),
-                fieldErrors
-        );
+        com.movieapi.dto.ErrorResponses.ValidationError errorResponse = new com.movieapi.dto.ErrorResponses.ValidationError();
+        errorResponse.status = HttpStatus.BAD_REQUEST.value();
+        errorResponse.error = "Validation Failed";
+        errorResponse.message = "Request validation failed";
+        errorResponse.path = request.getDescription(false).replace("uri=", "");
+        errorResponse.timestamp = LocalDateTime.now().toString();
+        errorResponse.fieldErrors = fieldErrors.toArray(new com.movieapi.dto.ErrorResponses.FieldError[0]);
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
@@ -125,7 +140,7 @@ public class GlobalExceptionHandler {
      * Handle method argument type mismatch (e.g., invalid path variables).
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(
+    public ResponseEntity<com.movieapi.dto.ErrorResponses.BadRequestError> handleMethodArgumentTypeMismatch(
             MethodArgumentTypeMismatchException ex, WebRequest request) {
         
         logger.warn("Method argument type mismatch: {}", ex.getMessage());
@@ -135,13 +150,12 @@ public class GlobalExceptionHandler {
                 ex.getName(),
                 ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown");
         
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Invalid Parameter",
-                message,
-                request.getDescription(false).replace("uri=", ""),
-                LocalDateTime.now()
-        );
+        com.movieapi.dto.ErrorResponses.BadRequestError errorResponse = new com.movieapi.dto.ErrorResponses.BadRequestError();
+        errorResponse.status = HttpStatus.BAD_REQUEST.value();
+        errorResponse.error = "Bad Request";
+        errorResponse.message = message;
+        errorResponse.path = request.getDescription(false).replace("uri=", "");
+        errorResponse.timestamp = LocalDateTime.now().toString();
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
@@ -150,18 +164,17 @@ public class GlobalExceptionHandler {
      * Handle JSON parsing errors (malformed JSON).
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+    public ResponseEntity<com.movieapi.dto.ErrorResponses.BadRequestError> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException ex, WebRequest request) {
         
         logger.warn("Malformed JSON request: {}", ex.getMessage());
         
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Malformed JSON",
-                "Invalid JSON format in request body",
-                request.getDescription(false).replace("uri=", ""),
-                LocalDateTime.now()
-        );
+        com.movieapi.dto.ErrorResponses.BadRequestError errorResponse = new com.movieapi.dto.ErrorResponses.BadRequestError();
+        errorResponse.status = HttpStatus.BAD_REQUEST.value();
+        errorResponse.error = "Bad Request";
+        errorResponse.message = "Invalid JSON format in request body";
+        errorResponse.path = request.getDescription(false).replace("uri=", "");
+        errorResponse.timestamp = LocalDateTime.now().toString();
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
@@ -170,20 +183,19 @@ public class GlobalExceptionHandler {
      * Handle unsupported media type errors (e.g., missing Content-Type).
      */
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupportedException(
+    public ResponseEntity<com.movieapi.dto.ErrorResponses.UnsupportedMediaTypeError> handleHttpMediaTypeNotSupportedException(
             HttpMediaTypeNotSupportedException ex, WebRequest request) {
         
         logger.warn("Unsupported media type: {}", ex.getMessage());
         
         String message = "Content type '" + ex.getContentType() + "' is not supported. Please use 'application/json'.";
         
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
-                "Unsupported Media Type",
-                message,
-                request.getDescription(false).replace("uri=", ""),
-                LocalDateTime.now()
-        );
+        com.movieapi.dto.ErrorResponses.UnsupportedMediaTypeError errorResponse = new com.movieapi.dto.ErrorResponses.UnsupportedMediaTypeError();
+        errorResponse.status = HttpStatus.UNSUPPORTED_MEDIA_TYPE.value();
+        errorResponse.error = "Unsupported Media Type";
+        errorResponse.message = message;
+        errorResponse.path = request.getDescription(false).replace("uri=", "");
+        errorResponse.timestamp = LocalDateTime.now().toString();
         
         return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(errorResponse);
     }
@@ -192,121 +204,20 @@ public class GlobalExceptionHandler {
      * Handle all other exceptions.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(
+    public ResponseEntity<com.movieapi.dto.ErrorResponses.InternalServerError> handleGenericException(
             Exception ex, WebRequest request) {
         
         logger.error("Unexpected error occurred: {}", ex.getMessage(), ex);
         
-        ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Internal Server Error",
-                "An unexpected error occurred. Please try again later.",
-                request.getDescription(false).replace("uri=", ""),
-                LocalDateTime.now()
-        );
+        com.movieapi.dto.ErrorResponses.InternalServerError errorResponse = new com.movieapi.dto.ErrorResponses.InternalServerError();
+        errorResponse.status = HttpStatus.INTERNAL_SERVER_ERROR.value();
+        errorResponse.error = "Internal Server Error";
+        errorResponse.message = "An unexpected error occurred. Please try again later.";
+        errorResponse.path = request.getDescription(false).replace("uri=", "");
+        errorResponse.timestamp = LocalDateTime.now().toString();
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 
-    /**
-     * Standard error response structure.
-     */
-    @Schema(description = "Standard error response")
-    public static class ErrorResponse {
-        @Schema(description = "HTTP status code", example = "404")
-        private int status;
-        
-        @Schema(description = "Error category", example = "Movie Not Found")
-        private String error;
-        
-        @Schema(description = "Detailed error message", example = "Movie with ID 1 not found")
-        private String message;
-        
-        @Schema(description = "Request path that caused the error", example = "/movies/1")
-        private String path;
-        
-        @Schema(description = "Timestamp when the error occurred", example = "2024-01-15T10:30:00")
-        private LocalDateTime timestamp;
 
-        public ErrorResponse() {}
-
-        public ErrorResponse(int status, String error, String message, String path, LocalDateTime timestamp) {
-            this.status = status;
-            this.error = error;
-            this.message = message;
-            this.path = path;
-            this.timestamp = timestamp;
-        }
-
-        // Getters and setters
-        public int getStatus() { return status; }
-        public void setStatus(int status) { this.status = status; }
-
-        public String getError() { return error; }
-        public void setError(String error) { this.error = error; }
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-
-        public String getPath() { return path; }
-        public void setPath(String path) { this.path = path; }
-
-        public LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-    }
-
-    /**
-     * Validation error response structure with field-specific errors.
-     */
-    @Schema(description = "Validation error response with field-specific details")
-    public static class ValidationErrorResponse extends ErrorResponse {
-        @Schema(description = "List of field validation errors")
-        private List<FieldValidationError> fieldErrors;
-
-        public ValidationErrorResponse() {
-            super();
-            this.fieldErrors = new ArrayList<>();
-        }
-
-        public ValidationErrorResponse(int status, String error, String message, String path, 
-                                     LocalDateTime timestamp, List<FieldValidationError> fieldErrors) {
-            super(status, error, message, path, timestamp);
-            this.fieldErrors = fieldErrors != null ? fieldErrors : new ArrayList<>();
-        }
-
-        public List<FieldValidationError> getFieldErrors() { return fieldErrors; }
-        public void setFieldErrors(List<FieldValidationError> fieldErrors) { this.fieldErrors = fieldErrors; }
-    }
-
-    /**
-     * Individual field validation error.
-     */
-    @Schema(description = "Individual field validation error details")
-    public static class FieldValidationError {
-        @Schema(description = "Name of the field that failed validation", example = "title")
-        private String field;
-        
-        @Schema(description = "The rejected value", example = "")
-        private Object rejectedValue;
-        
-        @Schema(description = "Validation error message", example = "Title cannot be blank")
-        private String message;
-
-        public FieldValidationError() {}
-
-        public FieldValidationError(String field, Object rejectedValue, String message) {
-            this.field = field;
-            this.rejectedValue = rejectedValue;
-            this.message = message;
-        }
-
-        public String getField() { return field; }
-        public void setField(String field) { this.field = field; }
-
-        public Object getRejectedValue() { return rejectedValue; }
-        public void setRejectedValue(Object rejectedValue) { this.rejectedValue = rejectedValue; }
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-    }
 }
