@@ -2,19 +2,6 @@
 
 A REST API for managing movies built with Spring Boot, PostgreSQL, and Gradle.
 
-## 🚀 Current Status
-
-**Completed Components:**
-- ✅ Spring Boot 3.5.3 application setup
-- ✅ PostgreSQL 17.5 database configuration
-- ✅ Flyway database migrations
-- ✅ Basic project structure with Gradle
-- ✅ Health monitoring with Spring Boot Actuator
-- ✅ Test environment with H2 in-memory database
-
-**Currently Implementing:**
-+ None (CRUD API endpoints complete)
-
 ## 🐳 Quick Start with Docker (Recommended)
 
 The easiest way to run this application is using Docker Compose:
@@ -24,6 +11,10 @@ The easiest way to run this application is using Docker Compose:
 - **Docker Compose** (v2.0+)
 
 ### Getting Started
+
+0. **Install Docker and Docker Compose:**
+   - Follow the [official Docker installation guide](https://docs.docker.com/get-docker/) for your OS.
+   - Docker Compose is included with Docker Desktop installations.
 
 1. **Clone the repository:**
 ```bash
@@ -50,7 +41,6 @@ docker-compose up -d --build
 ```
 
 4. **Access the application:**
-- **API Base URL:** http://localhost:8080
 - **Swagger Documentation:** http://localhost:8080/swagger-ui.html
 - **Health Check:** http://localhost:8080/actuator/health
 
@@ -65,7 +55,6 @@ docker-compose down
 ```ini
 # Database credentials (required)
 DB_PASSWORD=your-secure-password
-POSTGRES_PASSWORD=your-secure-password
 
 # Application security (required)
 ADMIN_PASSWORD=your-secure-admin-password
@@ -89,7 +78,7 @@ If you prefer to run the application locally without Docker:
 
 ### Prerequisites for Manual Setup
 
-- **Java 17 or higher** (tested with Java 21/24)
+- **Java 17 or higher** (tested with Java 21/24, currently configured to Java 21)
 - **PostgreSQL 17.5** (installed via Homebrew)
 - **Gradle** (wrapper included, or install via Homebrew)
 
@@ -114,12 +103,6 @@ brew services start postgresql@17
 
 # Add PostgreSQL to PATH (for current session)
 export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
-
-# Create database and user (if not already done)
-createdb moviedb
-psql moviedb -c "CREATE USER movieuser WITH PASSWORD 'moviepass';"
-psql moviedb -c "GRANT ALL PRIVILEGES ON DATABASE moviedb TO movieuser;"
-psql moviedb -c "GRANT ALL ON SCHEMA public TO movieuser;"
 ```
 
 ### 3. Environment Variables for Manual Setup
@@ -223,11 +206,6 @@ The OWASP Dependency Check may fail with a 403 error when accessing the NVD (Nat
 2. **The dependency check is configured to continue on error** in the CI pipeline, so it won't block builds
 
 For production use, it's recommended to obtain an NVD API key and configure it in your CI environment variables.
-
-### Health Check Response
-```json
-{"status":"UP"}
-```
 
 ### Docker Container Monitoring
 
@@ -348,18 +326,8 @@ docker-compose logs db
 docker-compose restart db
 ```
 
-**3. Port Already in Use (Docker)**
-```bash
-# Check what's using the port
-lsof -i :8080
 
-# Stop conflicting containers
-docker stop $(docker ps -q --filter "publish=8080")
-
-# Or use different port in docker-compose.yml
-```
-
-**4. Environment Variables Not Loading**
+**3. Environment Variables Not Loading**
 ```bash
 # Verify .env file exists and has correct format
 cat .env
@@ -368,7 +336,7 @@ cat .env
 docker-compose --env-file .env up --build
 ```
 
-**5. Container Memory Issues**
+**4. Container Memory Issues**
 ```bash
 # Check container resource usage
 docker stats
@@ -437,29 +405,6 @@ The Swagger UI provides:
 - Error response documentation
 - Authentication support (if implemented)
 
-### Quick Start with Swagger UI
-
-1. Start the application: `./gradlew bootRun`
-2. Open http://localhost:8080/swagger-ui.html
-3. Explore all endpoints with interactive documentation
-4. Test endpoints directly from the browser
-5. View request/response examples and schemas
-
-### Available Endpoints
-
-**Health & Monitoring:**
-- `GET /actuator/health` - Application health status
-- `GET /actuator/info` - Application information
-- `GET /actuator/metrics` - Application metrics
-
-**Movie Management API:**
-- `GET /movies` - Get all movies
-- `GET /movies/{id}` - Get movie by ID (404 if not found)
-- `POST /movies` - Create new movie (201 Created, 400 on validation error, 409 on duplicate)
-- `PUT /movies/{id}` - Update movie (200 OK, 404 if not found, 409 on duplicate)
-- `DELETE /movies/{id}` - Delete movie (204 No Content, 404 if not found)
-- `GET /movies/search` - Search for movies by criteria (see below)
-
 ### Sample Test Data
 
 The application comes pre-loaded with diverse sample data for testing:
@@ -493,123 +438,6 @@ The application comes pre-loaded with diverse sample data for testing:
 - **Animation**: Finding Nemo, The Lion King
 
 ### Manual Testing Guide
-
-#### Testing CRUD Operations
-
-**1. Get All Movies**
-```bash
-curl -X GET "http://localhost:8080/movies" \
-  -H "accept: application/json"
-```
-
-**2. Get Specific Movie**
-```bash
-curl -X GET "http://localhost:8080/movies/1" \
-  -H "accept: application/json"
-```
-
-**3. Create New Movie**
-```bash
-curl -X POST "http://localhost:8080/movies" \
-  -H "accept: application/json" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Blade Runner 2049",
-    "director": "Denis Villeneuve",
-    "genre": "Sci-Fi",
-    "releaseYear": 2017,
-    "rating": 8.0
-  }'
-```
-
-**4. Update Movie**
-```bash
-curl -X PUT "http://localhost:8080/movies/1" \
-  -H "accept: application/json" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Inception",
-    "director": "Christopher Nolan",
-    "genre": "Sci-Fi",
-    "releaseYear": 2010,
-    "rating": 9.0
-  }'
-```
-
-**5. Delete Movie**
-```bash
-curl -X DELETE "http://localhost:8080/movies/1" \
-  -H "accept: application/json"
-```
-
-#### Testing Search Operations
-
-**Search by Genre**
-```bash
-curl -X GET "http://localhost:8080/movies/search?genre=Sci-Fi" \
-  -H "accept: application/json"
-```
-
-**Search by Director**
-```bash
-curl -X GET "http://localhost:8080/movies/search?director=Christopher%20Nolan" \
-  -H "accept: application/json"
-```
-
-**Search by Minimum Rating**
-```bash
-curl -X GET "http://localhost:8080/movies/search?minRating=9.0" \
-  -H "accept: application/json"
-```
-
-**Combined Search**
-```bash
-curl -X GET "http://localhost:8080/movies/search?genre=Sci-Fi&minRating=8.5&releaseYear=2010" \
-  -H "accept: application/json"
-```
-
-#### Testing Error Scenarios
-
-**1. Invalid Movie ID (404)**
-```bash
-curl -X GET "http://localhost:8080/movies/999" \
-  -H "accept: application/json"
-```
-
-**2. Invalid Data Types (400)**
-```bash
-curl -X GET "http://localhost:8080/movies/invalid" \
-  -H "accept: application/json"
-```
-
-**3. Validation Errors (400)**
-```bash
-curl -X POST "http://localhost:8080/movies" \
-  -H "accept: application/json" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "",
-    "director": "Test Director",
-    "genre": "Drama",
-    "releaseYear": 1800,
-    "rating": 15.0
-  }'
-```
-
-**4. Malformed JSON (400)**
-```bash
-curl -X POST "http://localhost:8080/movies" \
-  -H "accept: application/json" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Test", "invalid json'
-```
-
-**5. Missing Content-Type (415)**
-```bash
-curl -X POST "http://localhost:8080/movies" \
-  -H "accept: application/json" \
-  -d '{"title": "Test Movie"}'
-```
 
 ### HTTP Status Codes
 
@@ -697,23 +525,7 @@ Get the second page of 10 movies:
 curl -X GET "http://localhost:8080/movies/search?page=1&size=10"
 ```
 
-**Response Format:**
 
-The response includes pagination metadata:
-```json
-{
-  "content": [ ... ],
-  "pageable": { ... },
-  "totalPages": 8,
-  "totalElements": 36,
-  "last": false,
-  "numberOfElements": 5,
-  "first": true,
-  "size": 5,
-  "number": 0,
-  "empty": false
-}
-```
 
 **Notes:**
 - If `page` or `size` are not provided, defaults are used.
@@ -727,109 +539,6 @@ The response includes pagination metadata:
 | releaseYear  | Integer  | Filter by release year (e.g., 2010)                              |
 | minRating    | Decimal  | Filter by minimum rating (inclusive, e.g., 8.5)                  |
 | director     | String   | Filter by director (case-insensitive, partial match allowed)     |
-
-**Examples:**
-
-*Get all Sci-Fi movies released in 2010 with rating at least 8.0:*
-```http
-GET /movies/search?genre=Sci-Fi&releaseYear=2010&minRating=8.0
-```
-
-*Get all movies directed by someone with "nolan" in their name:*
-```http
-GET /movies/search?director=nolan
-```
-
-*Get all movies with rating 9.0 or higher:*
-```http
-GET /movies/search?minRating=9.0
-```
-
-*Get all movies (no filters):*
-```http
-GET /movies/search
-```
-
-**Validation & Error Handling:**
-
-- All parameters are optional, but if provided, must be valid:
-    - `genre` and `director` cannot be empty strings if present.
-    - `releaseYear` must be 1900 or later and not more than 5 years in the future.
-    - `minRating` must be between 0.0 and 10.0.
-- Invalid parameters return a 400 Bad Request with a descriptive error message.
-
-**Sample Error Response:**
-```json
-{
-    "status": 400,
-    "error": "Invalid Movie Data",
-    "message": "Release year must be 1900 or later",
-    "fieldErrors": [
-        { "field": "releaseYear", "rejectedValue": 1800, "message": "Release year must be 1900 or later" }
-    ]
-}
-```
-
-**Notes:**
-- If no movies match the criteria, an empty array is returned with 200 OK.
-- If no parameters are provided, all movies are returned.
-
----
-
-### Request/Response Format
-
-**Movie JSON:**
-```json
-{
-    "id": 1,
-    "title": "Inception",
-    "genre": "Sci-Fi",
-    "releaseYear": 2010,
-    "director": "Christopher Nolan",
-    "rating": 8.8
-}
-```
-
-**Error Response Example:**
-```json
-{
-    "status": 404,
-    "error": "Movie Not Found",
-    "message": "Movie with ID 123 not found",
-    "path": "/movies/123",
-    "timestamp": "2025-07-08T12:00:00"
-}
-```
-
-**Validation Error Example:**
-```json
-{
-    "status": 400,
-    "error": "Validation Failed",
-    "message": "Request validation failed",
-    "path": "/movies",
-    "timestamp": "2025-07-08T12:00:00",
-    "fieldErrors": [
-        { "field": "title", "rejectedValue": "", "message": "Title cannot be blank" },
-        { "field": "rating", "rejectedValue": 15.0, "message": "Rating cannot exceed 10.0" }
-    ]
-}
-```
-
-All error responses are now consistent and handled by a global exception handler.
-
-### Testing Completion Summary
-
-✅ **Issue #8 Complete** - API Testing Documentation and Manual Testing
-
-**Completed Features:**
-- ✅ Interactive Swagger/OpenAPI documentation at http://localhost:8080/swagger-ui.html
-- ✅ Comprehensive sample movie dataset (39 movies) with diverse test data
-- ✅ Complete API endpoint documentation with request/response examples
-- ✅ Manual testing guide with curl commands
-- ✅ Error response documentation and validation
-- ✅ HTTP status code verification (200, 201, 204, 400, 404, 409, 415, 500)
-- ✅ JSON schema validation and examples
 
 **Sample Data Coverage:**
 - 🎬 **39 movies** across **multiple decades** (1941-2025)
@@ -875,46 +584,6 @@ open http://localhost:8080/swagger-ui.html
 
 ---
 
-### Completed (Issues 1-2)
-- [x] Spring Boot project initialization
-- [x] PostgreSQL database setup
-- [x] Flyway migrations
-- [x] Basic application configuration
-- [x] Test environment setup
-
-### Completed (Issues 3-4)
-- [x] Movie JPA entity
-- [x] Movie repository interface
-- [x] Repository unit tests
-- [x] Service layer implementation
-
-### Completed (Issue 5)
-- [x] REST controller endpoints (CRUD)
-- [x] Request/response validation
-- [x] Global error handling with consistent error responses
-- [x] Controller integration tests (Tests with H2 database)
-
-### Completed (Issue 6)
-- [x] Search endpoint (`GET /movies/search`)
-- [x] Search parameter validation 
-- [x] Multi-criteria filtering (genre, director, release year, rating)
-- [x] Case-insensitive search for text fields
-- [x] Comprehensive search integration tests
-
-### Completed (Issue 7)
-- [x] Integration test suite
-- [x] End-to-end API testing with real HTTP requests
-- [x] Test database isolation and cleanup
-- [x] Comprehensive test coverage
-
-### Completed (Issue 8)
-- [x] Swagger/OpenAPI documentation setup
-- [x] Interactive API documentation with Swagger UI
-- [x] Comprehensive sample movie dataset
-- [x] Manual testing guide and documentation
-- [x] Complete API testing documentation
-- [x] HTTP status code verification
-- [x] Error response format documentation
 
 ## 🚀 Advanced Docker Configuration
 
@@ -936,9 +605,9 @@ The following environment variables can be configured:
 - `SERVER_TOMCAT_MIN_SPARE_THREADS` - Minimum spare threads
 
 **Database:**
-- `POSTGRES_DB` - Database name
-- `POSTGRES_USER` - Database user
-- `POSTGRES_PASSWORD` - Database password (use POSTGRES_PASSWORD in .env)
+- `DB_NAME` - Database name
+- `DB_USER` - Database user
+- `DB_PASSWORD` - Database password (use DB_PASSWORD in .env)
 
 **Security:**
 - `ADMIN_PASSWORD` - Admin user password
@@ -1094,42 +763,6 @@ You can run quality checks locally before pushing:
 # Generate reports
 ./gradlew jacocoTestReport
 ```
-
-### 📝 Pipeline Customization
-
-The pipeline is designed to be easily extensible:
-
-1. **Add New Quality Tools**: Update `build.gradle` and workflow
-2. **Modify Coverage Requirements**: Update JaCoCo configuration
-3. **Add Deployment Steps**: Extend workflow with deployment jobs
-4. **Custom Notifications**: Add notification steps to the workflow
-
-### 🔐 Security Considerations
-
-- **Secrets Management**: Sensitive data handled via GitHub Secrets
-- **Dependency Scanning**: Regular security vulnerability checks
-- **Container Security**: Docker image security scanning
-- **Code Quality**: Static analysis prevents security issues
-
-### 📊 Monitoring and Metrics
-
-The pipeline provides:
-- **Build Status**: Visual indicators for pass/fail
-- **Test Coverage Trends**: Historical coverage data
-- **Security Alerts**: Automated vulnerability notifications
-- **Performance Metrics**: Build time and resource usage
-
----
-
-## 🔮 Upcoming Features
-
-- [ ] Production deployment setup
-- [ ] Performance optimizations
-- [ ] Additional API features (pagination, sorting)
-
-## 🤝 Contributing
-
-This is a learning project following a structured approach with GitHub issues. Each issue represents a complete feature implementation.
 
 ## 📄 License
 
