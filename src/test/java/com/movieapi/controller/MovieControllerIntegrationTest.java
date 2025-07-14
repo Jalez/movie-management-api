@@ -180,7 +180,7 @@ class MovieControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(testMovie1)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.error").value("Duplicate Movie"))
+                .andExpect(jsonPath("$.error").value("Conflict"))
                 .andExpect(jsonPath("$.message").value("Movie 'Inception' by director 'Christopher Nolan' already exists"));
 
         // Verify only one movie exists in database
@@ -221,7 +221,7 @@ class MovieControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(conflictingUpdate)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.error").value("Duplicate Movie"));
+                .andExpect(jsonPath("$.error").value("Conflict"));
 
         // Verify original movie data is unchanged
         Optional<Movie> unchanged = movieRepository.findById(movie2.getId());
@@ -330,19 +330,19 @@ class MovieControllerIntegrationTest {
         mockMvc.perform(get("/movies/invalid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Parameter"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         mockMvc.perform(put("/movies/invalid")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testMovie1)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Parameter"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         mockMvc.perform(delete("/movies/invalid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Parameter"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
     }
 
     @Test
@@ -458,7 +458,7 @@ class MovieControllerIntegrationTest {
         mockMvc.perform(get("/movies/invalid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Parameter"))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").exists())
                 .andExpect(jsonPath("$.path").exists())
                 .andExpect(jsonPath("$.timestamp").exists());

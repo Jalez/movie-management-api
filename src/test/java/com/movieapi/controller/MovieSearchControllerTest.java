@@ -217,7 +217,7 @@ class MovieSearchControllerTest {
         mockMvc.perform(get("/movies/search?genre="))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value(containsString("Genre cannot be empty")));
 
         verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -233,7 +233,7 @@ class MovieSearchControllerTest {
         mockMvc.perform(get("/movies/search?director="))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value(containsString("Director cannot be empty")));
 
         verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -249,7 +249,7 @@ class MovieSearchControllerTest {
         mockMvc.perform(get("/movies/search?releaseYear=1800"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value(containsString("Release year must be 1900 or later")));
 
         verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -266,7 +266,7 @@ class MovieSearchControllerTest {
         mockMvc.perform(get("/movies/search?releaseYear=2050"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value(containsString("Release year cannot be more than 5 years in the future")));
 
         verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -282,7 +282,7 @@ class MovieSearchControllerTest {
         mockMvc.perform(get("/movies/search?minRating=-1.0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value(containsString("Minimum rating cannot be negative")));
 
         verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -298,7 +298,7 @@ class MovieSearchControllerTest {
         mockMvc.perform(get("/movies/search?minRating=15.0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value(containsString("Minimum rating cannot exceed 10.0")));
 
         verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
@@ -310,7 +310,7 @@ class MovieSearchControllerTest {
         mockMvc.perform(get("/movies/search?releaseYear=invalid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Parameter"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         verify(movieService, never()).searchMoviesAdvanced(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
