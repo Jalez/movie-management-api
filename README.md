@@ -15,14 +15,6 @@ The easiest way to run this application is using Docker Compose:
 0. **Install Docker and Docker Compose:**
    - Follow the [official Docker installation guide](https://docs.docker.com/get-docker/) for your OS.
    - Docker Compose is included with Docker Desktop installations.
-   - For Linux, install Docker Compose separately if needed (ensure it's v2.0+):
-     ```bash
-     sudo apt-get install docker-compose-plugin
-     ```
-   - Verify installation:
-      ```bash
-      docker-compose --version
-      ``` 
 
 1. **Clone the repository:**
 ```bash
@@ -49,7 +41,6 @@ docker-compose up -d --build
 ```
 
 4. **Access the application:**
-- **API Base URL:** http://localhost:8080
 - **Swagger Documentation:** http://localhost:8080/swagger-ui.html
 - **Health Check:** http://localhost:8080/actuator/health
 
@@ -87,7 +78,7 @@ If you prefer to run the application locally without Docker:
 
 ### Prerequisites for Manual Setup
 
-- **Java 17 or higher** (tested with Java 21/24)
+- **Java 17 or higher** (tested with Java 21/24, currently configured to Java 21)
 - **PostgreSQL 17.5** (installed via Homebrew)
 - **Gradle** (wrapper included, or install via Homebrew)
 
@@ -112,12 +103,6 @@ brew services start postgresql@17
 
 # Add PostgreSQL to PATH (for current session)
 export PATH="/opt/homebrew/opt/postgresql@17/bin:$PATH"
-
-# Create database and user (if not already done)
-createdb moviedb
-psql moviedb -c "CREATE USER movieuser WITH PASSWORD 'moviepass';"
-psql moviedb -c "GRANT ALL PRIVILEGES ON DATABASE moviedb TO movieuser;"
-psql moviedb -c "GRANT ALL ON SCHEMA public TO movieuser;"
 ```
 
 ### 3. Environment Variables for Manual Setup
