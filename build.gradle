@@ -1,3 +1,4 @@
+import com.github.spotbugs.snom.Effort
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.3'
@@ -12,9 +13,9 @@ plugins {
 // Build info for actuator
 
 flyway {
-	url = "jdbc:postgresql://localhost:5432/${System.getenv('POSTGRES_DB') ?: 'moviedb'}"
-	user = System.getenv('POSTGRES_USER') ?: 'movieuser'
-	password = System.getenv('POSTGRES_PASSWORD') ?: 'moviepass'
+       url = "jdbc:postgresql://localhost:5432/${System.getenv('POSTGRES_DB') ?: 'moviedb'}"
+       user = System.getenv('POSTGRES_USER') ?: 'movieuser'
+       password = System.getenv('POSTGRES_PASSWORD') ?: 'moviepass'
 	schemas = ['public']
 	locations = ['filesystem:src/main/resources/db/migration']
 }
@@ -47,8 +48,7 @@ checkstyle {
 // SpotBugs configuration
 spotbugs {
 	toolVersion = '4.7.3'
-	effort = 'max'
-	reportLevel = 'medium'
+	effort = Effort.MAX
 	excludeFilter = file("${rootDir}/config/spotbugs/exclude.xml")
 	ignoreFailures = true
 }
