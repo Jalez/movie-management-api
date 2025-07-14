@@ -3,6 +3,7 @@ package com.movieapi.controller;
 import com.movieapi.entity.Movie;
 import com.movieapi.service.MovieService;
 import com.movieapi.validation.MovieSearchValidator;
+import com.movieapi.dto.ErrorResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -57,7 +58,7 @@ public class MovieController {
      */
     @GetMapping
     @Operation(
-        summary = "Get all movies",
+        summary = "Get all movies (not paginated)",
         description = "Retrieves a list of all movies in the system"
     )
     @ApiResponses(value = {
@@ -74,7 +75,7 @@ public class MovieController {
             description = "Internal server error",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.InternalServerError.class)
             )
         )
     })
@@ -112,7 +113,7 @@ public class MovieController {
             description = "Invalid movie ID format",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.BadRequestError.class)
             )
         ),
         @ApiResponse(
@@ -120,7 +121,7 @@ public class MovieController {
             description = "Movie not found",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.MovieNotFoundError.class)
             )
         ),
         @ApiResponse(
@@ -128,7 +129,7 @@ public class MovieController {
             description = "Internal server error",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.InternalServerError.class)
             )
         )
     })
@@ -171,7 +172,7 @@ public class MovieController {
             description = "Invalid movie data or validation errors",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ValidationErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.ValidationError.class)
             )
         ),
         @ApiResponse(
@@ -179,7 +180,7 @@ public class MovieController {
             description = "Movie already exists",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.ConflictError.class)
             )
         ),
         @ApiResponse(
@@ -187,7 +188,7 @@ public class MovieController {
             description = "Unsupported media type",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.UnsupportedMediaTypeError.class)
             )
         ),
         @ApiResponse(
@@ -195,7 +196,7 @@ public class MovieController {
             description = "Internal server error",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.InternalServerError.class)
             )
         )
     })
@@ -237,7 +238,7 @@ public class MovieController {
             description = "Invalid movie data or validation errors",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ValidationErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.ValidationError.class)
             )
         ),
         @ApiResponse(
@@ -245,7 +246,7 @@ public class MovieController {
             description = "Movie not found",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.MovieNotFoundError.class)
             )
         ),
         @ApiResponse(
@@ -253,7 +254,7 @@ public class MovieController {
             description = "Unsupported media type",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.UnsupportedMediaTypeError.class)
             )
         ),
         @ApiResponse(
@@ -261,7 +262,7 @@ public class MovieController {
             description = "Internal server error",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.InternalServerError.class)
             )
         )
     })
@@ -300,7 +301,7 @@ public class MovieController {
             description = "Invalid movie ID format",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.BadRequestError.class)
             )
         ),
         @ApiResponse(
@@ -308,7 +309,7 @@ public class MovieController {
             description = "Movie not found",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.MovieNotFoundError.class)
             )
         ),
         @ApiResponse(
@@ -316,7 +317,7 @@ public class MovieController {
             description = "Internal server error",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.InternalServerError.class)
             )
         )
     })
@@ -359,7 +360,7 @@ public class MovieController {
             description = "Search completed successfully (may return empty page if no matches)",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = Object.class)
+                schema = @Schema(implementation = com.movieapi.dto.PagedMoviesResponse.class)
             )
         ),
         @ApiResponse(
@@ -367,7 +368,7 @@ public class MovieController {
             description = "Invalid search parameters or pagination parameters",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.BadRequestError.class)
             )
         ),
         @ApiResponse(
@@ -375,7 +376,7 @@ public class MovieController {
             description = "Internal server error",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = GlobalExceptionHandler.ErrorResponse.class)
+                schema = @Schema(implementation = ErrorResponses.InternalServerError.class)
             )
         )
     })

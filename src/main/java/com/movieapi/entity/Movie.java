@@ -46,13 +46,17 @@ public class Movie {
     @Schema(description = "Year the movie was released", example = "2010", required = true, minimum = "1888", maximum = "2100")
     private Integer releaseYear;
 
-    @NotNull(message = "Rating cannot be null")
     @DecimalMin(value = "0.0", message = "Rating must be at least 0.0")
     @DecimalMax(value = "10.0", message = "Rating cannot exceed 10.0")
     @Digits(integer = 2, fraction = 1, message = "Rating must have at most 2 integer digits and 1 decimal place")
-    @Column(name = "rating", nullable = false, precision = 3, scale = 1)
-    @Schema(description = "Rating of the movie (0.0 to 10.0)", example = "8.8", required = true, minimum = "0.0", maximum = "10.0")
+    @Column(name = "rating", nullable = true, precision = 3, scale = 1)
+    @Schema(description = "Rating of the movie (0.0 to 10.0, null if no reviews)", example = "8.8", required = false, minimum = "0.0", maximum = "10.0")
     private BigDecimal rating;
+
+    @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Schema(description = "List of reviews for the movie")
+    @com.fasterxml.jackson.annotation.JsonManagedReference
+    private java.util.List<Review> reviews = new java.util.ArrayList<>();
 
     // Default constructor (required by JPA)
     public Movie() {
@@ -114,6 +118,14 @@ public class Movie {
 
     public void setRating(BigDecimal rating) {
         this.rating = rating;
+    }
+
+    public java.util.List<Review> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(java.util.List<Review> reviews) {
+        this.reviews = reviews;
     }
 
     // equals and hashCode based on id

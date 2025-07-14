@@ -97,13 +97,13 @@ class MovieSearchIntegrationTest {
         mockMvc.perform(get("/movies/search?releaseYear=invalid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Parameter"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         // Test invalid minimum rating type
         mockMvc.perform(get("/movies/search?minRating=invalid"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Parameter"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
     }
 
     @Test
@@ -112,37 +112,37 @@ class MovieSearchIntegrationTest {
         mockMvc.perform(get("/movies/search?genre="))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         // Test empty director parameter
         mockMvc.perform(get("/movies/search?director="))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         // Test invalid release year (too early)
         mockMvc.perform(get("/movies/search?releaseYear=1800"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         // Test invalid release year (too far in future)
         mockMvc.perform(get("/movies/search?releaseYear=2050"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         // Test negative minimum rating
         mockMvc.perform(get("/movies/search?minRating=-1.0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
 
         // Test excessive minimum rating
         mockMvc.perform(get("/movies/search?minRating=15.0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Invalid Movie Data"));
+                .andExpect(jsonPath("$.error").value("Bad Request"));
     }
 
     @Test

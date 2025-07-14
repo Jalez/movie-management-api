@@ -1,4 +1,4 @@
-package main.java.com.movieapi.dto;
+package com.movieapi.dto;
 
 import com.movieapi.entity.Movie;
 import io.swagger.v3.oas.annotations.media.Schema;
