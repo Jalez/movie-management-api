@@ -6,9 +6,18 @@ plugins {
 	id 'checkstyle'
 	id 'com.github.spotbugs' version '6.0.4'
 	id 'org.owasp.dependencycheck' version '9.0.1'
+	id 'org.flywaydb.flyway' version '9.22.3'
 }
 
 // Build info for actuator
+
+flyway {
+	url = "jdbc:postgresql://localhost:5432/${System.getenv('POSTGRES_DB') ?: 'moviedb'}"
+	user = System.getenv('POSTGRES_USER') ?: 'movieuser'
+	password = System.getenv('POSTGRES_PASSWORD') ?: 'moviepass'
+	schemas = ['public']
+	locations = ['filesystem:src/main/resources/db/migration']
+}
 springBoot {
 	buildInfo()
 }
