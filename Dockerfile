@@ -4,15 +4,14 @@
 FROM gradle:jdk21-noble AS builder
 WORKDIR /app
 
-# Cache Gradle dependencies
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    chmod +x gradlew
-
-# Copy project files
+# Copy project files first
 COPY build.gradle settings.gradle gradlew ./
 COPY gradle ./gradle
 COPY src ./src
 COPY config ./config
+
+# Make gradlew executable
+RUN chmod +x gradlew
 
 # Build and run tests
 RUN --mount=type=cache,target=/home/gradle/.gradle \
