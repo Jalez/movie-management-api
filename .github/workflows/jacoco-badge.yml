@@ -6,6 +6,9 @@ on:
     workflows: ["CI/CD Pipeline"]
     types:
       - completed
+    branches:
+      - main
+      - develop
 
 jobs:
   generate-badge:
