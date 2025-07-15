@@ -17,18 +17,18 @@ This repository contains a simple Spring Boot API for storing and querying movie
    ```
 4. Build and start the containers:
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 5. Open <http://localhost:8080/swagger-ui.html> to explore the API.
 6. Stop the services with:
    ```bash
-   docker-compose down
+   docker compose down
    ```
 
 ## Running Locally without Docker
 
 Requirements:
-- Java 17+
+- Java 21
 - PostgreSQL (configured for user `movieuser` and database `moviedb`)
 - (Optional) A global Gradle installation – the wrapper is included.
 
@@ -46,7 +46,7 @@ Steps:
    ```bash
    ./gradlew bootRun
    ```
-   The API will be available at <http://localhost:8080>.
+4. Open <http://localhost:8080/swagger-ui.html> to explore the API.
 
 ## Running Tests
 
