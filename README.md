@@ -11,19 +11,45 @@ This repository contains a simple Spring Boot API for storing and querying movie
 
 ## CI/CD Pipeline
 
-This project uses a streamlined CI/CD pipeline that:
+This project uses a **streamlined CI/CD pipeline** that prioritizes **performance and simplicity** over reusability.
 
+### Design Philosophy
+
+**Performance-First Approach:**
 - **Single Job**: All checks run in one job for faster execution
 - **Parallel Execution**: Gradle tasks run in parallel where possible
 - **Minimal Dependencies**: Only PostgreSQL service container needed
 - **Fast Feedback**: Quick failure detection and reporting
 - **Simple Maintenance**: Single workflow file, easy to understand and modify
 
+**Trade-offs Made:**
+- ❌ **Not DRY**: Steps are not reusable across workflows
+- ❌ **Less Modular**: Changes require updating one file
+- ✅ **Faster Execution**: No job orchestration overhead
+- ✅ **Better Performance**: Single runner, shared cache, optimized resource usage
+- ✅ **Easier Debugging**: Linear execution, clear step-by-step flow
+
+### Pipeline Steps
+
 The pipeline runs on push to `main`/`develop` and pull requests, performing:
 - Build and unit tests with coverage
 - Code quality checks (Checkstyle, SpotBugs)
-- Security vulnerability scanning
+- Security vulnerability scanning (resilient to API failures)
 - Docker image building (on push only)
+
+### Alternative Approaches Considered
+
+**Reusable Workflow Approach** (original goal):
+- Multiple jobs using reusable workflow steps
+- Better DRY principle and modularity
+- Slower execution due to job orchestration
+- More complex configuration
+
+**Current Streamlined Approach** (chosen):
+- Single job with inline steps
+- Prioritizes performance and simplicity
+- Faster execution and easier maintenance
+- Sacrifices reusability for speed
 
 ## Quick Start with Docker
 

@@ -13,9 +13,9 @@ COPY config ./config
 # Make gradlew executable
 RUN chmod +x gradlew
 
-# Build and run tests
+# Build without tests (tests already run in CI)
 RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon --parallel build
+    ./gradlew --no-daemon --parallel build -x test
 
 # -------- Runtime Stage --------
 FROM eclipse-temurin:21-jdk
