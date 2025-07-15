@@ -5,7 +5,7 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'jacoco'
 	id 'checkstyle'
-	id 'com.github.spotbugs' version '6.0.4'
+id 'com.github.spotbugs' version '6.2.2'
 	id 'org.owasp.dependencycheck' version '9.0.1'
 	id 'org.flywaydb.flyway' version '9.22.3'
 }
@@ -13,9 +13,9 @@ plugins {
 // Build info for actuator
 
 flyway {
-       url = "jdbc:postgresql://localhost:5432/${System.getenv('POSTGRES_DB') ?: 'moviedb'}"
-       user = System.getenv('POSTGRES_USER') ?: 'movieuser'
-       password = System.getenv('POSTGRES_PASSWORD') ?: 'moviepass'
+	   url = "jdbc:postgresql://localhost:5432/${System.getenv('POSTGRES_DB') ?: 'moviedb'}"
+	   user = System.getenv('POSTGRES_USER') ?: 'movieuser'
+	   password = System.getenv('POSTGRES_PASSWORD') ?: 'moviepass'
 	schemas = ['public']
 	locations = ['filesystem:src/main/resources/db/migration']
 }
@@ -47,7 +47,7 @@ checkstyle {
 
 // SpotBugs configuration
 spotbugs {
-	toolVersion = '4.7.3'
+	toolVersion = '4.8.0'
 	effort = Effort.MAX
 	excludeFilter = file("${rootDir}/config/spotbugs/exclude.xml")
 	ignoreFailures = true
@@ -111,7 +111,6 @@ dependencies {
 	implementation 'org.flywaydb:flyway-database-postgresql'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 	runtimeOnly 'org.postgresql:postgresql'
-	runtimeOnly 'com.h2database:h2'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
