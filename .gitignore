@@ -70,6 +70,10 @@ app.log
 .env.*
 !.env.example
 
+# Secrets
+.secrets
+*.secrets
+
 # OWASP Dependency Check data directories
 .dependency-check-data/
 .dependency-check-cache/
