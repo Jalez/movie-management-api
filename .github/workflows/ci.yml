@@ -1,59 +1,105 @@
+---
 name: CI/CD Pipeline
-
-permissions:
-  contents: read
-  security-events: write
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true
+  JAVA_OPTS: -Xmx2g
 
 jobs:
-  build-and-test:
-    uses: ./.github/workflows/reusable-steps.yml
-    with:
-      job: build-and-test
-    secrets:
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-
-  quality-checks:
-    needs: build-and-test
-    uses: ./.github/workflows/reusable-steps.yml
-    with:
-      job: quality-checks
-
-  docker-build:
-    needs: build-and-test
-    if: github.event_name == 'push' && github.ref =~ 'refs/heads/(main|develop)'
-    uses: ./.github/workflows/reusable-steps.yml
-    with:
-      job: docker-build
-
-  security-scan:
-    needs: build-and-test
-    uses: ./.github/workflows/reusable-steps.yml
-    with:
-      job: security-scan
-
-  notify:
-    needs:
-      - build-and-test
-      - quality-checks
-      - docker-build
-      - security-scan
-    if: always()
+  ci:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: moviedb
+          POSTGRES_USER: movieuser
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD || 'moviepass' }}
+        options: >-
+          --health-cmd "pg_isready -U movieuser -d moviedb"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          -p 5432:5432
+        ports:
+          - 5432:5432
+
     steps:
-      - name: Notify on failure
-        if: failure()
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Wait for PostgreSQL
         run: |
-          echo "❌ CI/CD Pipeline failed!"
-          echo "See details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-      - name: Notify on success
-        if: success()
+          echo "Installing PostgreSQL client..."
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          echo "Waiting for PostgreSQL..."
+          timeout 30 bash -c 'until pg_isready -h localhost -p 5432 -U movieuser -d moviedb; do sleep 1; done'
+
+      - name: Build and Test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/moviedb
+          SPRING_DATASOURCE_USERNAME: movieuser
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD || 'moviepass' }}
+          SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'adminpass' }}
         run: |
-          echo "✅ CI/CD Pipeline completed successfully!"
-          echo "Artifacts & reports are in this run."
+          ./gradlew build test jacocoTestReport --no-daemon --parallel
+
+      - name: Quality Checks
+        run: |
+          ./gradlew checkstyleMain spotbugsMain --no-daemon
+
+      - name: Security Scan
+        run: |
+          ./gradlew dependencyCheckAnalyze --no-daemon
+
+      - name: Build Docker Image
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        run: |
+          docker build -t movie-management-api:${{ github.sha }} .
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            build/reports/
+            build/test-results/
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: build/reports/jacoco/
+
+      - name: Notify Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ CI/CD Pipeline completed successfully!"
+          else
+            echo "❌ CI/CD Pipeline failed!"
+            echo "See details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi
