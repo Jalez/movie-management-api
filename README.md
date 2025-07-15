@@ -67,6 +67,10 @@ Execute the test suite with:
 ./gradlew test
 ```
 
+Running coverage reports:
+```bash
+./gradlew jacocoTestReport
+```
 
 ## Troubleshooting PostgreSQL Setup
 
