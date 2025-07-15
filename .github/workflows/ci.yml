@@ -1,6 +1,12 @@
 ---
 name: CI/CD Pipeline
 
+# DESIGN DECISION: This workflow prioritizes performance over reusability
+# - Single job approach for faster execution
+# - Inline steps instead of reusable workflows
+# - Trade-off: Less DRY but better performance
+# - Alternative: Reusable workflow steps would be more modular but slower
+
 on:
   push:
     branches: [main, develop]
@@ -79,7 +85,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and Push Docker Image
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && success()
         run: |
           docker build -t movie-management-api:${{ github.sha }} .
 
