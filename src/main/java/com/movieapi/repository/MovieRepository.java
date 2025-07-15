@@ -104,7 +104,7 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
      * @return list of movies matching the criteria
      */
     @Query("SELECT m FROM Movie m WHERE " +
-            "(:genre IS NULL OR LOWER(m.genre) = LOWER(:genre)) AND " +
+            "(:genre IS NULL OR LOWER(m.genre) = LOWER(CAST(:genre AS string))) AND " +
             "(:minRating IS NULL OR m.rating >= :minRating) AND " +
             "(:releaseYear IS NULL OR m.releaseYear = :releaseYear)")
     List<Movie> findMoviesByCriteria(
