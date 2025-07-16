@@ -100,4 +100,10 @@ public interface ReviewService {
      * @return Page of filtered reviews
      */
     org.springframework.data.domain.Page<Review> searchReviews(Double minRating, Double maxRating, String userName, String startDate, String endDate, org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * Update the rating of a movie based on its reviews.
+     * @param movie the movie whose rating should be updated
+     */
+    void updateMovieRating(com.movieapi.entity.Movie movie);
 }

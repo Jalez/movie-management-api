@@ -24,51 +24,47 @@ public class Movie {
     @NotBlank(message = "Title cannot be blank")
     @Size(max = 255, message = "Title cannot exceed 255 characters")
     @Column(name = "title", nullable = false)
-    @Schema(description = "Title of the movie", example = "Inception", required = true, maxLength = 255)
+    @Schema(description = "Title of the movie", example = "The Shawshank Redemption", required = true, maxLength = 255)
     private String title;
 
     @NotBlank(message = "Director cannot be blank")
     @Size(max = 255, message = "Director cannot exceed 255 characters")
     @Column(name = "director", nullable = false)
-    @Schema(description = "Director of the movie", example = "Christopher Nolan", required = true, maxLength = 255)
+    @Schema(description = "Director of the movie", example = "Frank Darabont", required = true, maxLength = 255)
     private String director;
 
     @NotBlank(message = "Genre cannot be blank")
     @Size(max = 100, message = "Genre cannot exceed 100 characters")
     @Column(name = "genre", nullable = false)
-    @Schema(description = "Genre of the movie", example = "Sci-Fi", required = true, maxLength = 100)
+    @Schema(description = "Genre of the movie", example = "Drama", required = true, maxLength = 100)
     private String genre;
 
     @NotNull(message = "Release year cannot be null")
     @Min(value = 1888, message = "Release year must be 1888 or later") // First motion picture
     @Max(value = 2100, message = "Release year cannot be in the far future")
     @Column(name = "release_year", nullable = false)
-    @Schema(description = "Year the movie was released", example = "2010", required = true, minimum = "1888", maximum = "2100")
+    @Schema(description = "Year the movie was released", example = "1994", required = true, minimum = "1888", maximum = "2100")
     private Integer releaseYear;
 
-    @DecimalMin(value = "0.0", message = "Rating must be at least 0.0")
-    @DecimalMax(value = "10.0", message = "Rating cannot exceed 10.0")
-    @Digits(integer = 2, fraction = 1, message = "Rating must have at most 2 integer digits and 1 decimal place")
     @Column(name = "rating", nullable = true, precision = 3, scale = 1)
-    @Schema(description = "Rating of the movie (0.0 to 10.0, null if no reviews)", example = "8.8", required = false, minimum = "0.0", maximum = "10.0")
+    @Schema(description = "Average rating of the movie based on reviews (0.0 to 10.0, null if no reviews)", example = "9.3", accessMode = Schema.AccessMode.READ_ONLY)
     private BigDecimal rating;
 
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Schema(description = "List of reviews for the movie")
-    @com.fasterxml.jackson.annotation.JsonManagedReference
+    @Schema(description = "List of reviews for the movie", accessMode = Schema.AccessMode.READ_ONLY)
     private java.util.List<Review> reviews = new java.util.ArrayList<>();
 
     // Default constructor (required by JPA)
     public Movie() {
     }
 
-    // Constructor with all fields except id
-    public Movie(String title, String director, String genre, Integer releaseYear, BigDecimal rating) {
+    // Constructor with all fields except id and rating (rating is calculated from reviews)
+    public Movie(String title, String director, String genre, Integer releaseYear) {
         this.title = title;
         this.director = director;
         this.genre = genre;
         this.releaseYear = releaseYear;
-        this.rating = rating;
+        this.rating = null; // Rating starts as null and is calculated from reviews
     }
 
     // Getters and Setters
@@ -118,6 +114,24 @@ public class Movie {
 
     public void setRating(BigDecimal rating) {
         this.rating = rating;
+    }
+
+    /**
+     * Calculate and update the movie rating based on its reviews.
+     * If there are no reviews, the rating is set to null.
+     */
+    public void calculateRatingFromReviews() {
+        if (reviews == null || reviews.isEmpty()) {
+            this.rating = null;
+        } else {
+            double averageRating = reviews.stream()
+                    .mapToDouble(review -> review.getRating().doubleValue())
+                    .average()
+                    .orElse(0.0);
+            
+            // Round to 1 decimal place
+            this.rating = BigDecimal.valueOf(Math.round(averageRating * 10.0) / 10.0);
+        }
     }
 
     public java.util.List<Review> getReviews() {

@@ -6,6 +6,7 @@ import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.exception.MovieNotFoundException;
 import com.movieapi.repository.MovieRepository;
 import com.movieapi.service.MovieService;
+import com.movieapi.service.ReviewService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,10 +32,12 @@ public class MovieServiceImpl implements MovieService {
     private static final Logger logger = LoggerFactory.getLogger(MovieServiceImpl.class);
 
     private final MovieRepository movieRepository;
+    private final ReviewService reviewService;
 
     @Autowired
-    public MovieServiceImpl(MovieRepository movieRepository) {
+    public MovieServiceImpl(MovieRepository movieRepository, ReviewService reviewService) {
         this.movieRepository = movieRepository;
+        this.reviewService = reviewService;
     }
 
     @Override
@@ -82,6 +85,10 @@ public class MovieServiceImpl implements MovieService {
         
         // Save the movie
         Movie savedMovie = movieRepository.save(movie);
+        
+        // Calculate rating from reviews (will be null initially since no reviews exist)
+        reviewService.updateMovieRating(savedMovie);
+        
         logger.info("Successfully created movie with ID: {} - {}", savedMovie.getId(), savedMovie.getTitle());
         
         return savedMovie;
@@ -116,6 +123,10 @@ public class MovieServiceImpl implements MovieService {
         // Update the movie
         movie.setId(id); // Ensure the ID is preserved
         Movie updatedMovie = movieRepository.save(movie);
+        
+        // Recalculate rating from reviews
+        reviewService.updateMovieRating(updatedMovie);
+        
         logger.info("Successfully updated movie with ID: {} - {}", updatedMovie.getId(), updatedMovie.getTitle());
         
         return updatedMovie;
@@ -288,10 +299,6 @@ public class MovieServiceImpl implements MovieService {
         if (movie.getReleaseYear() == null) {
             throw new InvalidMovieDataException("releaseYear", null, "Release year cannot be null");
         }
-        
-        if (movie.getRating() == null) {
-            throw new InvalidMovieDataException("rating", null, "Rating cannot be null");
-        }
     }
 
     /**
@@ -314,12 +321,13 @@ public class MovieServiceImpl implements MovieService {
         }
         
         // Validate rating range (additional check beyond Bean Validation)
-        if (movie.getRating().compareTo(BigDecimal.ZERO) < 0) {
-            throw new InvalidMovieDataException("rating", movie.getRating(), "Rating cannot be negative");
-        }
-        
-        if (movie.getRating().compareTo(new BigDecimal("10.0")) > 0) {
-            throw new InvalidMovieDataException("rating", movie.getRating(), "Rating cannot exceed 10.0");
+        if (movie.getRating() != null) {
+            if (movie.getRating().compareTo(BigDecimal.ZERO) < 0) {
+                throw new InvalidMovieDataException("rating", movie.getRating(), "Rating cannot be negative");
+            }
+            if (movie.getRating().compareTo(new BigDecimal("10.0")) > 0) {
+                throw new InvalidMovieDataException("rating", movie.getRating(), "Rating cannot exceed 10.0");
+            }
         }
         
         // Validate title length

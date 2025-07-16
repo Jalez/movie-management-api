@@ -168,19 +168,26 @@ public class ReviewServiceImpl implements ReviewService {
         }, pageable);
     }
 
-    private void updateMovieRating(Movie movie) {
+    @Override
+    public void updateMovieRating(Movie movie) {
         if (movie == null) return;
-        List<Review> reviews = movie.getReviews();
-        if (reviews == null || reviews.isEmpty()) {
-            movie.setRating(BigDecimal.ZERO);
+        
+        // Calculate average rating from reviews in the database
+        List<Review> reviews = reviewRepository.findByMovieId(movie.getId());
+        
+        if (reviews.isEmpty()) {
+            movie.setRating(null);
         } else {
-            double avg = reviews.stream()
-                    .mapToDouble(Review::getRating)
+            double averageRating = reviews.stream()
+                    .mapToDouble(review -> review.getRating().doubleValue())
                     .average()
                     .orElse(0.0);
-            BigDecimal rounded = BigDecimal.valueOf(avg).setScale(1, RoundingMode.HALF_UP);
-            movie.setRating(rounded);
+            
+            // Round to 1 decimal place
+            BigDecimal rating = BigDecimal.valueOf(Math.round(averageRating * 10.0) / 10.0);
+            movie.setRating(rating);
         }
+        
         movieRepository.save(movie);
     }
 }

@@ -53,6 +53,11 @@ class MovieSearchIntegrationTest {
         Long movie2Id = createMovieAndGetId(movie2);
         Long movie3Id = createMovieAndGetId(movie3);
 
+        // Add reviews to set ratings
+        addReview(movie1Id, "User1", "Great movie!", 8.8);
+        addReview(movie2Id, "User2", "Classic!", 8.7);
+        addReview(movie3Id, "User3", "Masterpiece!", 8.9);
+
         // Test search by genre
         mockMvc.perform(get("/movies/search?genre=Sci-Fi"))
                 .andExpect(status().isOk())
@@ -163,7 +168,7 @@ class MovieSearchIntegrationTest {
         movie.setDirector(director);
         movie.setGenre(genre);
         movie.setReleaseYear(year);
-        movie.setRating(new BigDecimal(rating));
+        // Do not set rating for creation
         return movie;
     }
 
@@ -178,5 +183,13 @@ class MovieSearchIntegrationTest {
 
         Movie createdMovie = objectMapper.readValue(response, Movie.class);
         return createdMovie.getId();
+    }
+
+    private void addReview(Long movieId, String userName, String reviewText, double rating) throws Exception {
+        String reviewJson = String.format("{\"userName\":\"%s\",\"reviewText\":\"%s\",\"rating\":%s}", userName, reviewText, rating);
+        mockMvc.perform(post("/movies/" + movieId + "/reviews")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(reviewJson))
+                .andExpect(status().isCreated());
     }
 }
