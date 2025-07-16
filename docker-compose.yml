@@ -10,18 +10,11 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/moviedb
       - SPRING_DATASOURCE_USERNAME=movieuser
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_JPA_SHOW_SQL=${SPRING_JPA_SHOW_SQL:-true}
       
-      # Flyway configuration
-      - SPRING_FLYWAY_ENABLED=true
-      - SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
-      
-      # JVM and memory settings
+      # JVM settings
       - JAVA_OPTS=${JAVA_OPTS:-"-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError"}
       
-      # Application specific settings
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+      # Server settings
       - SERVER_TOMCAT_MAX_THREADS=${SERVER_TOMCAT_MAX_THREADS:-200}
       - SERVER_TOMCAT_MIN_SPARE_THREADS=${SERVER_TOMCAT_MIN_SPARE_THREADS:-20}
     depends_on:
