@@ -6,8 +6,8 @@ plugins {
 	id 'jacoco'
 	id 'checkstyle'
 	id 'com.github.spotbugs' version '6.2.2'
-	id 'org.owasp.dependencycheck' version '9.0.1'
-	id 'org.flywaydb.flyway' version '9.22.3'
+	id 'org.owasp.dependencycheck' version '9.0.2'
+	id 'org.flywaydb.flyway' version '10.8.1'
 }
 
 // Build info for actuator
