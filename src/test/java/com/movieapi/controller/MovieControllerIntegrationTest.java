@@ -14,7 +14,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -207,11 +206,10 @@ class MovieControllerIntegrationTest {
 
         // Try to update second movie to have same title/director as first
         Movie conflictingUpdate = new Movie();
-        conflictingUpdate.setTitle("Inception");
-        conflictingUpdate.setDirector("Christopher Nolan");
-        conflictingUpdate.setGenre("Action");
-        conflictingUpdate.setReleaseYear(2020);
-        conflictingUpdate.setRating(new BigDecimal("8.0"));
+        conflictingUpdate.setTitle(movie1.getTitle());
+        conflictingUpdate.setDirector(movie1.getDirector());
+        conflictingUpdate.setGenre(movie1.getGenre());
+        conflictingUpdate.setReleaseYear(movie1.getReleaseYear());
 
         mockMvc.perform(put("/movies/" + movie2.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -418,26 +416,6 @@ class MovieControllerIntegrationTest {
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
-    private Movie createTestMovie(String title, String director, String genre, Integer year, String rating) {
-        Movie movie = new Movie();
-        movie.setTitle(title);
-        movie.setDirector(director);
-        movie.setGenre(genre);
-        movie.setReleaseYear(year);
-        movie.setRating(new BigDecimal(rating));
-        return movie;
-    }
 
-    private Long createMovieAndGetId(Movie movie) throws Exception {
-        String response = mockMvc.perform(post("/movies")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(movie)))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
 
-        Movie createdMovie = objectMapper.readValue(response, Movie.class);
-        return createdMovie.getId();
-    }
 }
