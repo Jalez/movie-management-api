@@ -34,24 +34,14 @@ open_url() {
     local url="$1"
     print_status "Opening $url in browser..."
     case "$(uname -s)" in
-        Darwin*)    # macOS
-            open "$url"
-            ;;
-        Linux*)     # Linux
-            if command -v xdg-open > /dev/null; then
-                xdg-open "$url"
-            elif command -v sensible-browser > /dev/null; then
-                sensible-browser "$url"
-            else
-                print_warning "Could not automatically open browser. Please open manually: $url"
-            fi
-            ;;
-        CYGWIN*|MINGW32*|MSYS*|MINGW*)  # Windows
-            start "$url"
-            ;;
+        Darwin*)
+            open "$url" ;;
+        Linux*)
+            xdg-open "$url" ;;
+        CYGWIN*|MINGW32*|MSYS*|MINGW*)
+            start "$url" ;;
         *)
-            print_warning "Could not automatically open browser. Please open manually: $url"
-            ;;
+            print_warning "Could not automatically open browser. Please open manually: $url" ;;
     esac
 }
 
