@@ -6,7 +6,6 @@ import com.movieapi.exception.MovieNotFoundException;
 import com.movieapi.exception.ReviewNotFoundException;
 import com.movieapi.repository.MovieRepository;
 import com.movieapi.repository.ReviewRepository;
-import com.movieapi.service.ReviewService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -16,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.springframework.data.jpa.domain.Specification;
 
+@SuppressWarnings("unchecked")
 class ReviewServiceImplTest {
     @Mock
     private ReviewRepository reviewRepository;
@@ -283,38 +283,38 @@ class ReviewServiceImplTest {
     void searchReviews_ShouldReturnPagedReviews() {
         List<Review> reviews = Arrays.asList(review1, review2);
         Page<Review> page = new PageImpl<>(reviews, PageRequest.of(0, 2), 2);
-        when(reviewRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class))).thenReturn(page);
+        when(reviewRepository.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
         
         Page<Review> result = reviewService.searchReviews(null, null, null, null, null, PageRequest.of(0, 2));
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent().get(0).getUserName()).isEqualTo("John");
         assertThat(result.getContent().get(1).getUserName()).isEqualTo("Jane");
-        verify(reviewRepository, times(1)).findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class));
+        verify(reviewRepository, times(1)).findAll(any(Specification.class), any(PageRequest.class));
     }
 
     @Test
     void searchReviews_WithFilters_ShouldApplyFilters() {
         List<Review> reviews = Arrays.asList(review1);
         Page<Review> page = new PageImpl<>(reviews, PageRequest.of(0, 1), 1);
-        when(reviewRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class))).thenReturn(page);
+        when(reviewRepository.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
         
         Page<Review> result = reviewService.searchReviews(8.0, 9.0, "John", "2023-01-01T00:00:00", "2023-12-31T23:59:59", PageRequest.of(0, 1));
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        verify(reviewRepository, times(1)).findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class));
+        verify(reviewRepository, times(1)).findAll(any(Specification.class), any(PageRequest.class));
     }
 
     @Test
     void searchReviews_WithInvalidDate_ShouldIgnoreDateFilter() {
         List<Review> reviews = Arrays.asList(review1, review2);
         Page<Review> page = new PageImpl<>(reviews, PageRequest.of(0, 2), 2);
-        when(reviewRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class))).thenReturn(page);
+        when(reviewRepository.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
         
         Page<Review> result = reviewService.searchReviews(null, null, null, "invalid-date", "invalid-date", PageRequest.of(0, 2));
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(2);
-        verify(reviewRepository, times(1)).findAll(any(org.springframework.data.jpa.domain.Specification.class), any(PageRequest.class));
+        verify(reviewRepository, times(1)).findAll(any(Specification.class), any(PageRequest.class));
     }
 
     @Test

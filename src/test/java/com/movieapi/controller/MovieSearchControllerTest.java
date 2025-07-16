@@ -1,6 +1,5 @@
 package com.movieapi.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.movieapi.entity.Movie;
 import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.service.MovieService;
@@ -42,9 +41,6 @@ class MovieSearchControllerTest {
 
     @MockitoBean
     private MovieSearchValidator movieSearchValidator;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     private Movie testMovie;
     private Movie testMovie2;
