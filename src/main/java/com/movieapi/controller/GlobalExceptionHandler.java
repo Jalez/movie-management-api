@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.apache.catalina.connector.ClientAbortException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -201,6 +203,32 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle client abort exceptions (broken pipe, client disconnection).
+     * These are typically harmless and don't need to be logged as errors.
+     */
+    @ExceptionHandler(ClientAbortException.class)
+    public ResponseEntity<Void> handleClientAbortException(ClientAbortException ex, WebRequest request) {
+        // Log at debug level since this is typically harmless
+        logger.debug("Client aborted connection: {}", ex.getMessage());
+        
+        // Return empty response since client has already disconnected
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Handle missing static resources (like favicon.ico).
+     * These are harmless and don't need to be logged as errors.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Void> handleNoResourceFoundException(NoResourceFoundException ex, WebRequest request) {
+        // Log at debug level since this is typically harmless
+        logger.debug("Static resource not found: {}", ex.getMessage());
+        
+        // Return 404 for missing static resources
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
      * Handle all other exceptions.
      */
     @ExceptionHandler(Exception.class)
@@ -216,7 +244,10 @@ public class GlobalExceptionHandler {
         errorResponse.path = request.getDescription(false).replace("uri=", "");
         errorResponse.timestamp = LocalDateTime.now().toString();
         
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        // Explicitly set Content-Type to application/json to avoid conflicts
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .header("Content-Type", "application/json")
+                .body(errorResponse);
     }
 
 

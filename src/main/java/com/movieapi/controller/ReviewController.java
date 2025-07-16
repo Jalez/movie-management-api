@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import com.movieapi.dto.PagedReviewsResponse;
@@ -35,6 +37,9 @@ import java.util.Optional;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @Tag(name = "Review Management", description = "API for managing reviews for movies")
 public class ReviewController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(ReviewController.class);
+    
     private final ReviewService reviewService;
 
     @Autowired
@@ -68,6 +73,9 @@ public class ReviewController {
             @Parameter(description = "Sort criteria (field,direction). Available fields: rating, createdAt, userName. Direction: asc, desc", example = "rating,desc")
             @RequestParam(defaultValue = "createdAt,desc") String sort) {
 
+        logger.debug("GET /reviews/search - Searching reviews with criteria - minRating: {}, maxRating: {}, userName: {}, startDate: {}, endDate: {}, page: {}, size: {}, sort: {}", 
+                    minRating, maxRating, userName, startDate, endDate, page, size, sort);
+
         Pageable pageable = createPageable(page, size, sort);
         Page<Review> reviews = reviewService.searchReviews(minRating, maxRating, userName, startDate, endDate, pageable);
         PagedReviewsResponse response;
@@ -98,6 +106,12 @@ public class ReviewController {
                 reviews.hasNext()
             );
         }
+        
+        logger.info("GET /reviews/search - Found {} reviews on page {} of {} total pages", 
+                   reviews != null ? reviews.getNumberOfElements() : 0, 
+                   reviews != null ? reviews.getNumber() : 0, 
+                   reviews != null ? reviews.getTotalPages() : 0);
+        
         return ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(response);
@@ -131,7 +145,11 @@ public class ReviewController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Review created successfully",
             content = @Content(mediaType = "application/json", 
-                schema = @Schema(implementation = com.movieapi.dto.ReviewResponse.class))),
+                schema = @Schema(implementation = com.movieapi.dto.ReviewResponse.class),
+                examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                    name = "Success Response",
+                    value = "{\"id\": 1, \"userName\": \"John Doe\", \"reviewText\": \"Great movie!\", \"rating\": 8.5, \"createdAt\": \"2025-07-16T01:00:00\", \"updatedAt\": \"2025-07-16T01:00:00\"}"
+                ))),
         @ApiResponse(responseCode = "404", description = "Movie not found",
             content = @Content(mediaType = "application/json",
                 schema = @Schema(implementation = ErrorResponses.MovieNotFoundError.class))),
@@ -140,10 +158,16 @@ public class ReviewController {
                 schema = @Schema(implementation = ErrorResponses.ValidationError.class)))
     })
     public ResponseEntity<com.movieapi.dto.ReviewResponse> addReview(
-            @Parameter(description = "Movie ID", required = true) @PathVariable Long movieId,
+            @Parameter(description = "Movie ID", required = true, example = "1") @PathVariable Long movieId,
             @Valid @RequestBody com.movieapi.dto.ReviewRequest reviewRequest) {
+        logger.debug("POST /movies/{}/reviews - Adding review for movie", movieId);
+        
         Review created = reviewService.addReview(movieId, reviewRequest);
         com.movieapi.dto.ReviewResponse response = convertToReviewResponse(created);
+        
+        logger.info("POST /movies/{}/reviews - Successfully created review with ID: {} - {} by {}", 
+                   movieId, created.getId(), created.getReviewText(), created.getUserName());
+        
         return ResponseEntity.status(HttpStatus.CREATED)
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(response);
@@ -166,11 +190,16 @@ public class ReviewController {
                 schema = @Schema(implementation = ErrorResponses.BadRequestError.class)))
     })
     public ResponseEntity<List<com.movieapi.dto.ReviewResponse>> getReviewsByMovie(
-            @Parameter(description = "Movie ID", required = true) @PathVariable Long movieId) {
+            @Parameter(description = "Movie ID", required = true, example = "1") @PathVariable Long movieId) {
+        logger.debug("GET /movies/{}/reviews - Retrieving reviews for movie", movieId);
+        
         List<Review> reviews = reviewService.getReviewsByMovie(movieId);
         List<com.movieapi.dto.ReviewResponse> responses = reviews.stream()
                 .map(this::convertToReviewResponse)
                 .toList();
+        
+        logger.info("GET /movies/{}/reviews - Retrieved {} reviews", movieId, reviews.size());
+        
         return ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(responses);
@@ -193,10 +222,16 @@ public class ReviewController {
                 schema = @Schema(implementation = ErrorResponses.BadRequestError.class)))
     })
     public ResponseEntity<com.movieapi.dto.ReviewResponse> getReview(
-            @Parameter(description = "Movie ID", required = true) @PathVariable Long movieId,
-            @Parameter(description = "Review ID", required = true) @PathVariable Long reviewId) {
+            @Parameter(description = "Movie ID", required = true, example = "1") @PathVariable Long movieId,
+            @Parameter(description = "Review ID", required = true, example = "1") @PathVariable Long reviewId) {
+        logger.debug("GET /movies/{}/reviews/{} - Retrieving specific review", movieId, reviewId);
+        
         Review review = reviewService.getReviewByMovieAndReviewId(movieId, reviewId);
         com.movieapi.dto.ReviewResponse response = convertToReviewResponse(review);
+        
+        logger.info("GET /movies/{}/reviews/{} - Review found: {} by {}", 
+                   movieId, reviewId, review.getReviewText(), review.getUserName());
+        
         return ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(response);
@@ -219,11 +254,17 @@ public class ReviewController {
                 schema = @Schema(implementation = ErrorResponses.ValidationError.class)))
     })
     public ResponseEntity<com.movieapi.dto.ReviewResponse> updateReview(
-            @Parameter(description = "Movie ID", required = true) @PathVariable Long movieId,
-            @Parameter(description = "Review ID", required = true) @PathVariable Long reviewId,
+            @Parameter(description = "Movie ID", required = true, example = "1") @PathVariable Long movieId,
+            @Parameter(description = "Review ID", required = true, example = "1") @PathVariable Long reviewId,
             @Valid @RequestBody com.movieapi.dto.ReviewRequest reviewRequest) {
+        logger.debug("PUT /movies/{}/reviews/{} - Updating review", movieId, reviewId);
+        
         Review updated = reviewService.updateReview(reviewId, reviewRequest);
         com.movieapi.dto.ReviewResponse response = convertToReviewResponse(updated);
+        
+        logger.info("PUT /movies/{}/reviews/{} - Successfully updated review: {} by {}", 
+                   movieId, reviewId, updated.getReviewText(), updated.getUserName());
+        
         return ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(response);
@@ -244,9 +285,14 @@ public class ReviewController {
                 schema = @Schema(implementation = ErrorResponses.BadRequestError.class)))
     })
     public ResponseEntity<Void> deleteReview(
-            @Parameter(description = "Movie ID", required = true) @PathVariable Long movieId,
-            @Parameter(description = "Review ID", required = true) @PathVariable Long reviewId) {
+            @Parameter(description = "Movie ID", required = true, example = "1") @PathVariable Long movieId,
+            @Parameter(description = "Review ID", required = true, example = "1") @PathVariable Long reviewId) {
+        logger.debug("DELETE /movies/{}/reviews/{} - Deleting review", movieId, reviewId);
+        
         reviewService.deleteReview(reviewId);
+        
+        logger.info("DELETE /movies/{}/reviews/{} - Successfully deleted review", movieId, reviewId);
+        
         return ResponseEntity.noContent().build();
     }
 
@@ -262,10 +308,15 @@ public class ReviewController {
         ),
     })
     public ResponseEntity<List<com.movieapi.dto.ReviewResponse>> getAllReviews() {
+        logger.debug("GET /reviews - Retrieving all reviews");
+        
         List<Review> reviews = reviewService.getAllReviews();
         List<com.movieapi.dto.ReviewResponse> responses = reviews.stream()
                 .map(this::convertToReviewResponse)
                 .toList();
+        
+        logger.info("GET /reviews - Retrieved {} reviews", reviews.size());
+        
         return ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(responses);

@@ -4,6 +4,7 @@ import com.movieapi.entity.Movie;
 import com.movieapi.service.MovieService;
 import com.movieapi.validation.MovieSearchValidator;
 import com.movieapi.dto.ErrorResponses;
+import com.movieapi.dto.PagedMoviesResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -201,9 +202,12 @@ public class MovieController {
         )
     })
     public ResponseEntity<Movie> createMovie(
-            @Parameter(description = "Movie data to create", required = true)
+            @Parameter(description = "Movie data to create (rating is ignored and calculated from reviews)", required = true)
             @Valid @RequestBody Movie movie) {
         logger.debug("POST /movies - Creating new movie: {}", movie != null ? movie.getTitle() : "null");
+        
+        // Ensure rating is null for new movies (it will be calculated from reviews)
+        movie.setRating(null);
         
         Movie createdMovie = movieService.createMovie(movie);
         
@@ -269,9 +273,12 @@ public class MovieController {
     public ResponseEntity<Movie> updateMovie(
             @Parameter(description = "Unique identifier of the movie to update", example = "1", required = true)
             @PathVariable Long id, 
-            @Parameter(description = "Updated movie data", required = true)
+            @Parameter(description = "Updated movie data (rating is ignored and calculated from reviews)", required = true)
             @Valid @RequestBody Movie movie) {
         logger.debug("PUT /movies/{} - Updating movie", id);
+        
+        // Ensure rating is preserved from existing movie (it will be recalculated from reviews)
+        movie.setRating(null);
         
         Movie updatedMovie = movieService.updateMovie(id, movie);
         
@@ -380,7 +387,7 @@ public class MovieController {
             )
         )
     })
-    public ResponseEntity<Page<Movie>> searchMovies(
+    public ResponseEntity<PagedMoviesResponse> searchMovies(
             @Parameter(
                 description = "Filter by movie genre (case-sensitive, exact match)",
                 example = "Sci-Fi",
@@ -461,9 +468,12 @@ public class MovieController {
         Page<Movie> movies = movieService.searchMoviesAdvanced(genre, releaseYear, minRating, maxRating,
                                                               yearMin, yearMax, title, director, pageable);
         
+        // Convert Page<Movie> to PagedMoviesResponse to avoid serialization warnings
+        PagedMoviesResponse response = convertToPagedMoviesResponse(movies);
+        
         logger.info("GET /movies/search - Found {} movies on page {} of {} total pages", 
                    movies.getNumberOfElements(), movies.getNumber(), movies.getTotalPages());
-        return ResponseEntity.ok(movies);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -511,5 +521,42 @@ public class MovieController {
                 case "releaseYear": return "release_year";
                 default: return field;
             }
+        }
+
+        /**
+         * Convert Page<Movie> to PagedMoviesResponse to avoid serialization warnings.
+         */
+        private PagedMoviesResponse convertToPagedMoviesResponse(Page<Movie> page) {
+            PagedMoviesResponse response = new PagedMoviesResponse();
+            response.setContent(page.getContent());
+            response.setLast(page.isLast());
+            response.setTotalPages(page.getTotalPages());
+            response.setTotalElements(page.getTotalElements());
+            response.setSize(page.getSize());
+            response.setNumber(page.getNumber());
+            response.setFirst(page.isFirst());
+            response.setNumberOfElements(page.getNumberOfElements());
+            response.setEmpty(page.isEmpty());
+            response.setHasPrevious(page.hasPrevious());
+            response.setHasNext(page.hasNext());
+            
+            // Set sort info
+            PagedMoviesResponse.SortInfo sortInfo = new PagedMoviesResponse.SortInfo();
+            sortInfo.setEmpty(page.getSort().isEmpty());
+            sortInfo.setSorted(page.getSort().isSorted());
+            sortInfo.setUnsorted(page.getSort().isUnsorted());
+            response.setSort(sortInfo);
+            
+            // Set pageable info
+            PagedMoviesResponse.PageableInfo pageableInfo = new PagedMoviesResponse.PageableInfo();
+            pageableInfo.setPageNumber(page.getNumber());
+            pageableInfo.setPageSize(page.getSize());
+            pageableInfo.setOffset(page.getPageable().getOffset());
+            pageableInfo.setPaged(page.getPageable().isPaged());
+            pageableInfo.setUnpaged(page.getPageable().isUnpaged());
+            pageableInfo.setSort(sortInfo);
+            response.setPageable(pageableInfo);
+            
+            return response;
         }
 }

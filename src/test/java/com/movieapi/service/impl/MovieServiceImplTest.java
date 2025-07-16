@@ -5,6 +5,7 @@ import com.movieapi.exception.DuplicateMovieException;
 import com.movieapi.exception.InvalidMovieDataException;
 import com.movieapi.exception.MovieNotFoundException;
 import com.movieapi.repository.MovieRepository;
+import com.movieapi.service.ReviewService;
 import com.movieapi.testutil.MovieTestDataBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ class MovieServiceImplTest {
 
     @Mock
     private MovieRepository movieRepository;
+
+    @Mock
+    private ReviewService reviewService;
 
     @InjectMocks
     private MovieServiceImpl movieService;
@@ -646,25 +650,6 @@ class MovieServiceImplTest {
         assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
                 .isInstanceOf(InvalidMovieDataException.class)
                 .hasMessageContaining("Release year cannot be null");
-
-        verifyNoInteractions(movieRepository);
-    }
-
-    @Test
-    void createMovie_WhenRatingIsNull_ShouldThrowInvalidMovieDataException() {
-        // Given
-        Movie invalidMovie = aMovie()
-                .withTitle("Test Movie")
-                .withDirector("Test Director")
-                .withGenre("Action")
-                .withReleaseYear(2020)
-                .withRating(null)
-                .build();
-
-        // When & Then
-        assertThatThrownBy(() -> movieService.createMovie(invalidMovie))
-                .isInstanceOf(InvalidMovieDataException.class)
-                .hasMessageContaining("Rating cannot be null");
 
         verifyNoInteractions(movieRepository);
     }

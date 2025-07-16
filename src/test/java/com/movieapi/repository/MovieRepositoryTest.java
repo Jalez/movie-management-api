@@ -37,10 +37,15 @@ class MovieRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        // Create test movies
-        movie1 = new Movie("Inception", "Christopher Nolan", "Sci-Fi", 2010, new BigDecimal("8.8"));
-        movie2 = new Movie("The Dark Knight", "Christopher Nolan", "Action", 2008, new BigDecimal("9.0"));
-        movie3 = new Movie("Pulp Fiction", "Quentin Tarantino", "Crime", 1994, new BigDecimal("8.9"));
+        // Create test movies (rating will be null initially)
+        movie1 = new Movie("Inception", "Christopher Nolan", "Sci-Fi", 2010);
+        movie2 = new Movie("The Dark Knight", "Christopher Nolan", "Action", 2008);
+        movie3 = new Movie("Pulp Fiction", "Quentin Tarantino", "Crime", 1994);
+
+        // Set ratings manually for testing (in real scenario, these would come from reviews)
+        movie1.setRating(new BigDecimal("8.8"));
+        movie2.setRating(new BigDecimal("9.0"));
+        movie3.setRating(new BigDecimal("8.9"));
 
         // Persist test data
         entityManager.persistAndFlush(movie1);
@@ -250,7 +255,8 @@ class MovieRepositoryTest {
     @Test
     void testSaveMovie() {
         // Given
-        Movie newMovie = new Movie("The Matrix", "The Wachowskis", "Sci-Fi", 1999, new BigDecimal("8.7"));
+        Movie newMovie = new Movie("The Matrix", "The Wachowskis", "Sci-Fi", 1999);
+        newMovie.setRating(new BigDecimal("8.7"));
 
         // When
         Movie savedMovie = movieRepository.save(newMovie);

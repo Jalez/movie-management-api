@@ -5,9 +5,9 @@ import com.movieapi.entity.Review;
 import com.movieapi.repository.MovieRepository;
 import com.movieapi.repository.ReviewRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,15 +15,20 @@ import java.util.Arrays;
 import java.util.List;
 
 @Configuration
-// Run in both default and dev profiles since we're not using Flyway
+@ConditionalOnProperty(name = "app.seeding.enabled", havingValue = "true", matchIfMissing = true)
 public class DataSeeder {
 
     @Bean
     public CommandLineRunner seedData(MovieRepository movieRepository, ReviewRepository reviewRepository) {
         return args -> {
-            // Clear existing data
-            reviewRepository.deleteAll();
-            movieRepository.deleteAll();
+            // Check if database is already seeded
+            long movieCount = movieRepository.count();
+            if (movieCount > 0) {
+                System.out.println("✅ Database already contains " + movieCount + " movies. Skipping seeding.");
+                return;
+            }
+
+            System.out.println("🌱 Database is empty. Starting seeding process...");
 
             // Create movies
             List<Movie> movies = Arrays.asList(

@@ -34,9 +34,7 @@ USER spring:spring
 
 # Environment defaults
 ENV JAVA_OPTS="-Djava.security.egd=file:/dev/./urandom -Dspring.security.user.name=admin" \
-    SPRING_PROFILES_ACTIVE=docker \
-    SPRING_OUTPUT_ANSI_ENABLED=ALWAYS \
-    DEBUG=true
+    SPRING_OUTPUT_ANSI_ENABLED=ALWAYS
 
 # Expose port and configure healthcheck
 EXPOSE 8080
